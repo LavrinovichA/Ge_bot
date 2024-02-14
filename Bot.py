@@ -255,20 +255,18 @@ def delete(message):
     bot.delete_message(message.chat.id, message.message_id)
 
 # Запуск бота
+last_restart_time = time.time()  # Запоминаем время последнего запуска
 while True:
     try:
+        print(f"Бот запущен в {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
     except Exception as e:
         print(f"Ошибка: {e}")
         time.sleep(10)  # Пауза перед повторной попыткой
 
-# Ожидание ввода команды "stop" для остановки бота
-    command = input("Введите 'stop', чтобы остановить бот: ")
-    if command.lower() == 'stop':
-        print("Остановка бота...")
-        break
-
-# Перезапуск бота через один час
-    print("Перезапуск бота через один час...")
-    time.sleep(3600)
+    # Проверяем, прошел ли час с момента последнего перезапуска
+    if time.time() - last_restart_time >= 3600:
+        print("Перезапуск бота через один час...")
+        # Здесь может быть код для завершения бота и его перезапуска
+        last_restart_time = time.time()  # Обновляем время последнего перезапуска
