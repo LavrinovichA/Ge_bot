@@ -255,7 +255,6 @@ def delete(message):
     bot.delete_message(message.chat.id, message.message_id)
 
 # Запуск бота
-last_restart_time = time.time()  # Запоминаем время последнего запуска
 while True:
     try:
         print(f"Бот запущен в {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -264,9 +263,3 @@ while True:
     except Exception as e:
         print(f"Ошибка: {e}")
         time.sleep(10)  # Пауза перед повторной попыткой
-
-    # Проверяем, прошел ли час с момента последнего перезапуска
-    if time.time() - last_restart_time >= 3600:
-        print("Перезапуск бота через один час...")
-        # Здесь может быть код для завершения бота и его перезапуска
-        last_restart_time = time.time()  # Обновляем время последнего перезапуска
