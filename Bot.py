@@ -255,10 +255,20 @@ def delete(message):
     bot.delete_message(message.chat.id, message.message_id)
 
 # Запуск бота
-if __name__ == "__main__":
+while True:
     try:
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
     except Exception as e:
         print(f"Ошибка: {e}")
         time.sleep(10)  # Пауза перед повторной попыткой
+
+# Ожидание ввода команды "stop" для остановки бота
+    command = input("Введите 'stop', чтобы остановить бот: ")
+    if command.lower() == 'stop':
+        print("Остановка бота...")
+        break
+
+# Перезапуск бота через один час
+    print("Перезапуск бота через один час...")
+    time.sleep(3600)
