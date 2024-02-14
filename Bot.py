@@ -129,6 +129,8 @@ def handle_commands(message):
                 bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
 # Удаление сообщения, если оно не отправлено в личном чате администратором
         bot.delete_message(message.chat.id, message.message_id)
+    else:
+        bot.delete_message(message.chat.id, message.message_id)
 
 # Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text == "Добавить данные в BAN")
@@ -220,7 +222,7 @@ def handle_all_messages(message):
         if found:
             user_id = message.from_user.id
             user_name = message.from_user.first_name
-            ban_message = f"Пользователь {user_name} (ID: {user_id}) отправил запрещенное сообщение"
+            ban_message = f"Я подозрева, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
             delete_user_message(message.chat.id, message.message_id)
             record_ban_event(user_id, user_name, message.text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
@@ -233,16 +235,16 @@ def handle_all_messages(message):
     if not found:
         for phrase in warning_phrases:
             words = phrase.split()
-            found = all(word.lower() in text for word in words)
+            found = any(len(word) == len(word.lower()) and word.lower() in text.split() for word in words)
             if found:
                 user_id = message.from_user.id
                 user_name = message.from_user.first_name
                 warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержит запрещенное в этом чате слово, попробуйте написать иначе."
                 delete_user_message(message.chat.id, message.message_id)
-                record_ban_event(user_id, user_name,message.text, "WARNING")
+                record_ban_event(user_id, user_name, message.text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
 
-# Удаление сообщения бота через 5 секунд
+                # Удаление сообщения бота через 5 секунд
                 threading.Thread(target=delete_message_after_delay,
                                  args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
                 break
