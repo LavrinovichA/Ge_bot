@@ -7,10 +7,8 @@
 3. Создайте файл `token.json` и добавьте в него токен вашего бота и id чата, в котором он будет работать, в следующем формате:
 
 ```json
-{
-  "token": "YOUR_BOT_TOKEN",
-  "chat_id": "YOUR_CHAT_ID"
-}
+{"token": "YOUR_BOT_TOKEN",
+  "chat_id": "YOUR_CHAT_ID"}
 
 Особенности:
 
