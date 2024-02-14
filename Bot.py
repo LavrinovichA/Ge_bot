@@ -256,5 +256,9 @@ def delete(message):
 
 # Запуск бота
 if __name__ == "__main__":
-    bot.polling(timeout=120)
-    time.sleep(5)  # Задержка перед чтением администраторов
+    try:
+        bot.polling(timeout=320, none_stop=True)
+        time.sleep(5)  # Задержка перед чтением администраторов
+    except Exception as e:
+        print(f"Ошибка: {e}")
+        time.sleep(10)  # Пауза перед повторной попыткой
