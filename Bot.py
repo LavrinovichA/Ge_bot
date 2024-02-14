@@ -222,7 +222,7 @@ def handle_all_messages(message):
         if found:
             user_id = message.from_user.id
             user_name = message.from_user.first_name
-            ban_message = f"Я подозрева, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
+            ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в нашем чате!"
             delete_user_message(message.chat.id, message.message_id)
             record_ban_event(user_id, user_name, message.text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
@@ -239,7 +239,7 @@ def handle_all_messages(message):
             if found:
                 user_id = message.from_user.id
                 user_name = message.from_user.first_name
-                warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержит запрещенное в этом чате слово, попробуйте написать иначе."
+                warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержало запрещенное в этом чате слово, попробуйте написать иначе."
                 delete_user_message(message.chat.id, message.message_id)
                 record_ban_event(user_id, user_name, message.text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
