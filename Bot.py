@@ -5,10 +5,12 @@ TOKEN_FILE = "token.json"
 BANNED_PHRASES_FILE = "banned_phrases.json"
 WARNING_PHRASES_FILE = "warning_phrases.json"
 BANSTAT_FILE = "banstat.json"
+BOT_STAT_FILE = "bot_stat.json"
 ADMINLIST_FILE = "adminlist.json"
 
 # Переменная для времени задержки при удалении сообщения бота (в секундах)
 DELETE_MESSAGE_DELAY = 5
+
 
 # Функция для чтения токена и id чата из файла
 def read_token_and_chat_id():
@@ -25,6 +27,7 @@ def read_token_and_chat_id():
         print(f"Ошибка при чтении файла '{TOKEN_FILE}': неверный формат JSON.")
         return None, None
 
+
 # Функция для записи данных в файл с указанием кодировки
 def write_data_to_file(filename, data):
     with open(filename, "a", encoding="utf-8") as file:
@@ -32,6 +35,7 @@ def write_data_to_file(filename, data):
             file.write(str(data) + "\n")
         except Exception as e:
             print(f"Ошибка при записи данных в файл: {e}")
+
 
 # Функция для чтения данных из файла
 def read_data_from_file(filename):
@@ -43,9 +47,11 @@ def read_data_from_file(filename):
         data = []
     return data
 
+
 # Функция для удаления сообщения пользователя
 def delete_user_message(chat_id, message_id):
     bot.delete_message(chat_id, message_id)
+
 
 # Функция для записи события бана в файл
 def record_ban_event(user_id, user_name, message_text, event_type):
@@ -56,7 +62,23 @@ def record_ban_event(user_id, user_name, message_text, event_type):
         "user_name": user_name,
         "message_text": message_text,
         "event_type": event_type}
-    with open("banstat.json", "a", encoding="utf-8") as file:
+    with open(BANSTAT_FILE, "a", encoding="utf-8") as file:
+        try:
+            json.dump(entry, file, ensure_ascii=False)
+            file.write("\n")
+        except Exception as e:
+            print(f"Ошибка при записи данных в файл: {e}")
+
+# Функция для записи попытки добавления бота
+def record_bot_add_event(user_id, user_name, bot_id, bot_name):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = {
+        "timestamp": current_time,
+        "user_id": user_id,
+        "user_name": user_name,
+        "bot_id": bot_id,
+        "bot_name": bot_name}
+    with open(BOT_STAT_FILE, "a", encoding="utf-8") as file:
         try:
             json.dump(entry, file, ensure_ascii=False)
             file.write("\n")
@@ -68,11 +90,16 @@ def clear_file(filename):
     with open(filename, "w"):
         pass
 
+
 # Функция для чтения токена и id чата
 TOKEN, CHAT_ID = read_token_and_chat_id()
 
 # Создание объекта бота
 bot = telebot.TeleBot(TOKEN)
+
+# Устанавливаем параметр skip_bot для обработки сообщений от других ботов
+bot.skip_pending = False
+
 
 # Функция для получения списка идентификаторов администраторов чата
 def get_chat_admins(chat_id):
@@ -85,10 +112,12 @@ def get_chat_admins(chat_id):
         print("Ошибка при получении администраторов чата:", e)
     return admins
 
+
 # Функция для удаления сообщения через 5 секунд
 def delete_message_after_delay(chat_id, message_id, delay):
     time.sleep(delay)
     bot.delete_message(chat_id, message_id)
+
 
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
@@ -108,29 +137,32 @@ clear_file(ADMINLIST_FILE)
 # Записываем список в файл
 write_data_to_file(ADMINLIST_FILE, "\n".join(admin_list))
 
+
 # Обработчик команды /start
 @bot.message_handler(commands=["start", "help", "settings", "any_other_command"])
 def handle_commands(message):
-# Проверка, что команда отправлена в личном сообщении и отправитель является администратором
+    # Проверка, что команда отправлена в личном сообщении и отправитель является администратором
     if str(message.from_user.id) in admin_ids:
-# Создаем клавиатуру с четырьмя пустыми кнопками
+        # Создаем клавиатуру с четырьмя пустыми кнопками
         keyboard = types.ReplyKeyboardMarkup(row_width=2)
         button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика"]
         for text in button_texts:
             button = types.KeyboardButton(text=text)
             keyboard.add(button)
-# Отправляем сообщение с клавиатурой в личное сообщение администратору
+        # Отправляем сообщение с клавиатурой в личное сообщение администратору
         try:
             bot.send_message(message.from_user.id, "Выберите действие:", reply_markup=keyboard)
         except ApiTelegramException as e:
             if e.error_code == 403:
-                bot.send_message(message.chat.id, "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.")
+                bot.send_message(message.chat.id,
+                                 "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.")
             else:
                 bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
-# Удаление сообщения, если оно не отправлено в личном чате администратором
+        # Удаление сообщения, если оно не отправлено в личном чате администратором
         bot.delete_message(message.chat.id, message.message_id)
     else:
         bot.delete_message(message.chat.id, message.message_id)
+
 
 # Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text == "Добавить данные в BAN")
@@ -140,15 +172,17 @@ def add_to_ban_phrases(message):
     # Добавить обработчик для следующего сообщения пользователя
     bot.register_next_step_handler(message, process_ban_phrase)
 
+
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
     new_phrase = message.text.strip()
     # Добавить новую фразу в файл Banned_phrases.json
     with open("banned_phrases.json", "a", encoding="utf-8") as file:
         file.write(new_phrase + "\n")
-# Отправить подтверждение администратору
+    # Отправить подтверждение администратору
     bot.send_message(message.chat.id, f"Фраза '{new_phrase}' успешно добавлена в BAN.")
     banbanned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
+
 
 # Обработчик для сообщений после выбора кнопки "Добавить данные в WARNING"
 @bot.message_handler(func=lambda message: message.text == "Добавить данные в WARNING")
@@ -156,14 +190,16 @@ def add_to_warning_phrases(message):
     bot.send_message(message.chat.id, "Введите текст для добавления в WARNING:")
     bot.register_next_step_handler(message, process_warning_phrase)
 
+
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
     new_phrase = message.text.strip()
-# Добавить новую фразу в файл warning_phrases.json
+    # Добавить новую фразу в файл warning_phrases.json
     with open("warning_phrases.json", "a", encoding="utf-8") as file:
         file.write(new_phrase + "\n")
     bot.send_message(message.chat.id, f"Фраза '{new_phrase}' успешно добавлена в WARNING.")
     warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
+
 
 # Обработчик для сообщений после выбора кнопки "Статистика"
 @bot.message_handler(func=lambda message: message.text == "Статистика")
@@ -171,6 +207,7 @@ def handle_statistics(message):
     bot.send_message(message.chat.id,
                      "Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
     bot.register_next_step_handler(message, process_dates)
+
 
 # Функция для обработки полученных дат
 def process_dates(message):
@@ -189,6 +226,7 @@ def process_dates(message):
                                       f"Забанено {count_ban} сообщений,\n"
                                       f"Вынесено {count_warning} предупреждений.")
 
+
 # Функция для подсчета событий в указанном диапазоне дат
 def count_events(file_path, start_date, end_date):
     count_ban = 0
@@ -206,32 +244,33 @@ def count_events(file_path, start_date, end_date):
                     count_warning += 1
     return count_ban, count_warning
 
+
 # Обработчик для всех сообщений
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     words = ()
     text = message.text.lower() if message.text else ""
 
-# Проверка, является ли отправитель администратором
-# Не выполняем никаких действий, если отправитель администратор
-    if str(message.from_user.id) in admin_ids:
-        return
+    # Проверка, является ли отправитель администратором
+    # Не выполняем никаких действий, если отправитель администратор
+    # if str(message.from_user.id) in admin_ids:
+    #    return
     for phrase in banned_phrases:
         words = phrase.split()
         found = all(word.lower() in text for word in words)
         if found:
             user_id = message.from_user.id
             user_name = message.from_user.first_name
-            ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в нашем чате!"
+            ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
             delete_user_message(message.chat.id, message.message_id)
             record_ban_event(user_id, user_name, message.text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
 
-# Удаление сообщения через 5 секунд
+            # Удаление сообщения через 5 секунд
             threading.Thread(target=delete_message_after_delay,
                              args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
             break
-# Если не было найдено запрещенных фраз
+    # Если не было найдено запрещенных фраз
     if not found:
         for phrase in warning_phrases:
             words = phrase.split()
@@ -249,11 +288,21 @@ def handle_all_messages(message):
                                  args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
                 break
 
+
 # Удаление сообщений о вступлении и выходе из чата
 @bot.message_handler(content_types=['new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo',
                                     'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created',
                                     'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id'])
 def delete(message):
+    if message.content_type == 'new_chat_members':
+        for new_chat_member in message.new_chat_members:
+            if new_chat_member.is_bot:
+                bot.kick_chat_member(message.chat.id, new_chat_member.id)
+                user_id = message.from_user.id
+                user_name = message.from_user.first_name + ' ' + message.from_user.last_name
+                bot_id = new_chat_member.id
+                bot_name = new_chat_member.username
+                record_bot_add_event (user_id, user_name, bot_id, bot_name)
     bot.delete_message(message.chat.id, message.message_id)
 
 # Запуск бота
