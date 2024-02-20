@@ -4,13 +4,12 @@ from imports import *
 TOKEN_FILE = "token.json"
 BANNED_PHRASES_FILE = "banned_phrases.json"
 WARNING_PHRASES_FILE = "warning_phrases.json"
-BANSTAT_FILE = "banstat.json"
+BANSTAT_FILE = "ban_stat.json"
 BOT_STAT_FILE = "bot_stat.json"
 ADMINLIST_FILE = "adminlist.json"
 
 # Переменная для времени задержки при удалении сообщения бота (в секундах)
 DELETE_MESSAGE_DELAY = 5
-
 
 # Функция для чтения токена и id чата из файла
 def read_token_and_chat_id():
@@ -145,7 +144,7 @@ def handle_commands(message):
     if str(message.from_user.id) in admin_ids:
         # Создаем клавиатуру с четырьмя пустыми кнопками
         keyboard = types.ReplyKeyboardMarkup(row_width=2)
-        button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика"]
+        button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика", "Статус"]
         for text in button_texts:
             button = types.KeyboardButton(text=text)
             keyboard.add(button)
@@ -220,7 +219,7 @@ def process_dates(message):
         bot.send_message(message.chat.id, "Неправильный формат ввода. Попробуйте снова.")
         return
 
-    file_path = 'banstat.json'
+    file_path = BANSTAT_FILE
     count_ban, count_warning = count_events(file_path, start_date, end_date)
     bot.send_message(message.chat.id, f"За период с {start_date} по {end_date}:\n"
                                       f"Забанено {count_ban} сообщений,\n"
@@ -244,6 +243,15 @@ def count_events(file_path, start_date, end_date):
                     count_warning += 1
     return count_ban, count_warning
 
+# Обработчик для сообщений после выбора кнопки "Статус"
+@bot.message_handler(func=lambda message: message.text == "Статус")
+def status_command(message):
+    try:
+        # Отправляем сообщение со статусом и временем запуска бота
+        bot.send_message(message.chat.id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
+    except Exception as e:
+        # Обработка ошибок
+        bot.reply_to(message, f"Произошла ошибка: {e}")
 
 # Обработчик для всех сообщений
 @bot.message_handler(func=lambda message: True)
@@ -294,21 +302,29 @@ def handle_all_messages(message):
                                     'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created',
                                     'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id'])
 def delete(message):
-    if message.content_type == 'new_chat_members':
-        for new_chat_member in message.new_chat_members:
-            if new_chat_member.is_bot:
-                bot.kick_chat_member(message.chat.id, new_chat_member.id)
-                user_id = message.from_user.id
-                user_name = message.from_user.first_name + ' ' + message.from_user.last_name
-                bot_id = new_chat_member.id
-                bot_name = new_chat_member.username
-                record_bot_add_event (user_id, user_name, bot_id, bot_name)
-    bot.delete_message(message.chat.id, message.message_id)
+    try:
+        if message.content_type == 'new_chat_members':
+            for new_chat_member in message.new_chat_members:
+                if new_chat_member.is_bot:
+                    # Попытка выгнать бота из чата
+                    bot.kick_chat_member(message.chat.id, new_chat_member.id)
+                    # Получение информации о пользователе, попытка записи события
+                    user_id = message.from_user.id
+                    user_name = message.from_user.first_name + ' ' + message.from_user.last_name
+                    bot_id = new_chat_member.id
+                    bot_name = new_chat_member.username
+                    record_bot_add_event(user_id, user_name, bot_id, bot_name)
+        # Попытка удалить сообщение
+        bot.delete_message(message.chat.id, message.message_id)
+    except Exception as e:
+        # Обработка ошибок
+        print(f"Произошла ошибка: {e}")
 
 # Запуск бота
 while True:
     try:
-        print(f"Бот запущен в {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        bot_start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(f"Бот запущен в {bot_start_time}")
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
     except Exception as e:
