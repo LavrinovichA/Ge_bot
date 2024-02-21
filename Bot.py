@@ -26,7 +26,6 @@ def read_token_and_chat_id():
         print(f"Ошибка при чтении файла '{TOKEN_FILE}': неверный формат JSON.")
         return None, None
 
-
 # Функция для записи данных в файл с указанием кодировки
 def write_data_to_file(filename, data):
     with open(filename, "a", encoding="utf-8") as file:
@@ -34,7 +33,6 @@ def write_data_to_file(filename, data):
             file.write(str(data) + "\n")
         except Exception as e:
             print(f"Ошибка при записи данных в файл: {e}")
-
 
 # Функция для чтения данных из файла
 def read_data_from_file(filename):
@@ -46,11 +44,9 @@ def read_data_from_file(filename):
         data = []
     return data
 
-
 # Функция для удаления сообщения пользователя
 def delete_user_message(chat_id, message_id):
     bot.delete_message(chat_id, message_id)
-
 
 # Функция для записи события бана в файл
 def record_ban_event(user_id, user_name, message_text, event_type):
@@ -89,7 +85,6 @@ def clear_file(filename):
     with open(filename, "w"):
         pass
 
-
 # Функция для чтения токена и id чата
 TOKEN, CHAT_ID = read_token_and_chat_id()
 
@@ -98,7 +93,6 @@ bot = telebot.TeleBot(TOKEN)
 
 # Устанавливаем параметр skip_bot для обработки сообщений от других ботов
 bot.skip_pending = False
-
 
 # Функция для получения списка идентификаторов администраторов чата
 def get_chat_admins(chat_id):
@@ -111,12 +105,10 @@ def get_chat_admins(chat_id):
         print("Ошибка при получении администраторов чата:", e)
     return admins
 
-
 # Функция для удаления сообщения через 5 секунд
 def delete_message_after_delay(chat_id, message_id, delay):
     time.sleep(delay)
     bot.delete_message(chat_id, message_id)
-
 
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
@@ -136,13 +128,12 @@ clear_file(ADMINLIST_FILE)
 # Записываем список в файл
 write_data_to_file(ADMINLIST_FILE, "\n".join(admin_list))
 
-
 # Обработчик команды /start
 @bot.message_handler(commands=["start", "help", "settings", "any_other_command"])
 def handle_commands(message):
     # Проверка, что команда отправлена в личном сообщении и отправитель является администратором
     if str(message.from_user.id) in admin_ids:
-        # Создаем клавиатуру с четырьмя пустыми кнопками
+        # Создаем клавиатуру
         keyboard = types.ReplyKeyboardMarkup(row_width=2)
         button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика", "Статус"]
         for text in button_texts:
@@ -162,7 +153,6 @@ def handle_commands(message):
     else:
         bot.delete_message(message.chat.id, message.message_id)
 
-
 # Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text == "Добавить данные в BAN")
 def add_to_ban_phrases(message):
@@ -170,7 +160,6 @@ def add_to_ban_phrases(message):
     bot.send_message(message.chat.id, "Введите текст для добавления в BAN:")
     # Добавить обработчик для следующего сообщения пользователя
     bot.register_next_step_handler(message, process_ban_phrase)
-
 
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
@@ -182,13 +171,11 @@ def process_ban_phrase(message):
     bot.send_message(message.chat.id, f"Фраза '{new_phrase}' успешно добавлена в BAN.")
     banbanned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
 
-
 # Обработчик для сообщений после выбора кнопки "Добавить данные в WARNING"
 @bot.message_handler(func=lambda message: message.text == "Добавить данные в WARNING")
 def add_to_warning_phrases(message):
     bot.send_message(message.chat.id, "Введите текст для добавления в WARNING:")
     bot.register_next_step_handler(message, process_warning_phrase)
-
 
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
@@ -199,14 +186,12 @@ def process_warning_phrase(message):
     bot.send_message(message.chat.id, f"Фраза '{new_phrase}' успешно добавлена в WARNING.")
     warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
 
-
 # Обработчик для сообщений после выбора кнопки "Статистика"
 @bot.message_handler(func=lambda message: message.text == "Статистика")
 def handle_statistics(message):
     bot.send_message(message.chat.id,
                      "Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
     bot.register_next_step_handler(message, process_dates)
-
 
 # Функция для обработки полученных дат
 def process_dates(message):
@@ -224,7 +209,6 @@ def process_dates(message):
     bot.send_message(message.chat.id, f"За период с {start_date} по {end_date}:\n"
                                       f"Забанено {count_ban} сообщений,\n"
                                       f"Вынесено {count_warning} предупреждений.")
-
 
 # Функция для подсчета событий в указанном диапазоне дат
 def count_events(file_path, start_date, end_date):
@@ -296,7 +280,6 @@ def handle_all_messages(message):
                                  args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
                 break
 
-
 # Удаление сообщений о вступлении и выходе из чата
 @bot.message_handler(content_types=['new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo',
                                     'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created',
@@ -328,5 +311,5 @@ while True:
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
     except Exception as e:
-        print(f"Ошибка: {e}")
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}Ошибка: {e}")
         time.sleep(10)  # Пауза перед повторной попыткой
