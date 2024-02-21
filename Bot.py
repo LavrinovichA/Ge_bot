@@ -205,15 +205,18 @@ def process_dates(message):
         return
 
     file_path = BANSTAT_FILE
-    count_ban, count_warning = count_events(file_path, start_date, end_date)
+    file_bot_path = BOT_STAT_FILE
+    count_ban, count_warning, count_bot = count_events(file_path, file_bot_path, start_date, end_date)
     bot.send_message(message.chat.id, f"За период с {start_date} по {end_date}:\n"
                                       f"Забанено {count_ban} сообщений,\n"
-                                      f"Вынесено {count_warning} предупреждений.")
+                                      f"Вынесено {count_warning} предупреждений,\n"
+                                      f"Удалено {count_bot} ботов.")
 
 # Функция для подсчета событий в указанном диапазоне дат
-def count_events(file_path, start_date, end_date):
+def count_events(file_path, file_bot_path, start_date, end_date):
     count_ban = 0
     count_warning = 0
+    count_bot = 0
     start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
     end_datetime = datetime.strptime(end_date, '%Y-%m-%d') if end_date else start_datetime
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -225,7 +228,13 @@ def count_events(file_path, start_date, end_date):
                     count_ban += 1
                 elif event_data['event_type'] == 'WARNING':
                     count_warning += 1
-    return count_ban, count_warning
+    with open(file_bot_path, 'r', encoding='utf-8') as file:
+        for line in file:
+            event_data = json.loads(line)
+            timestamp = datetime.strptime(event_data['timestamp'][:10], '%Y-%m-%d')
+            if start_datetime <= timestamp <= end_datetime:
+                count_bot += 1
+    return count_ban, count_warning, count_bot
 
 # Обработчик для сообщений после выбора кнопки "Статус"
 @bot.message_handler(func=lambda message: message.text == "Статус")
@@ -311,5 +320,5 @@ while True:
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
     except Exception as e:
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}Ошибка: {e}")
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
         time.sleep(10)  # Пауза перед повторной попыткой
