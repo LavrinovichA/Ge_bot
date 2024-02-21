@@ -133,7 +133,7 @@ write_data_to_file(ADMINLIST_FILE, "\n".join(admin_list))
 def handle_commands(message):
     # Проверка, что команда отправлена в личном сообщении и отправитель является администратором
     if str(message.from_user.id) in admin_ids:
-        if str(message.text == "/start"):
+        if str(message.text.strip() == "/start"):
             # Создаем клавиатуру
             keyboard = types.ReplyKeyboardMarkup(row_width=2)
             button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика", "Статус"]
@@ -154,18 +154,12 @@ def handle_commands(message):
 
 
 # Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
-@bot.message_handler(func=lambda message: message.text == "Добавить данные в BAN")
+@bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
 def add_to_ban_phrases(message):
     if str(message.from_user.id) in admin_ids:
-        if str(message.text == "Добавить данные в BAN"):
-            try:
-                bot.send_message(message.from_user.id, "Введите текст для добавления в BAN:")
-                bot.delete_message(message.chat.id, message.message_id)
-                bot.register_next_step_handler(message, process_ban_phrase)
-            except Exception as e:
-                # Обработка ошибок
-                bot.reply_to(message, f"Произошла ошибка: {e}")
-                bot.delete_message(message.chat.id, message.message_id)
+        bot.send_message(message.from_user.id, "Введите текст для добавления в BAN:")
+        bot.delete_message(message.chat.id, message.message_id)
+        bot.register_next_step_handler(message, process_ban_phrase)
 
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
@@ -178,18 +172,12 @@ def process_ban_phrase(message):
     banbanned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
 
 # Обработчик для сообщений после выбора кнопки "Добавить данные в WARNING"
-@bot.message_handler(func=lambda message: message.text == "Добавить данные в WARNING")
+@bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в WARNING")
 def add_to_warning_phrases(message):
     if str(message.from_user.id) in admin_ids:
-        if str(message.text == "Добавить данные в WARNING"):
-            try:
-                bot.send_message(message.from_user.id, "Введите текст для добавления в WARNING:")
-                bot.delete_message(message.chat.id, message.message_id)
-                bot.register_next_step_handler(message, process_warning_phrase)
-            except Exception as e:
-                # Обработка ошибок
-                bot.reply_to(message, f"Произошла ошибка: {e}")
-                bot.delete_message(message.chat.id, message.message_id)
+        bot.send_message(message.from_user.id, "Введите текст для добавления в WARNING:")
+        bot.delete_message(message.chat.id, message.message_id)
+        bot.register_next_step_handler(message, process_warning_phrase)
 
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
@@ -201,19 +189,12 @@ def process_warning_phrase(message):
     warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
 
 # Обработчик для сообщений после выбора кнопки "Статистика"
-@bot.message_handler(func=lambda message: message.text == "Статистика")
+@bot.message_handler(func=lambda message: message.text.strip() == "Статистика")
 def handle_statistics(message):
     if str(message.from_user.id) in admin_ids:
-        if str(message.text == "Статистика"):
-            try:
-               bot.send_message(message.from_user.id,
-                             "Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
-               bot.delete_message(message.chat.id, message.message_id)
-               bot.register_next_step_handler(message, process_dates)
-            except Exception as e:
-                # Обработка ошибок
-                bot.reply_to(message, f"Произошла ошибка: {e}")
-                bot.delete_message(message.chat.id, message.message_id)
+        bot.send_message(message.from_user.id,"Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
+        bot.delete_message(message.chat.id, message.message_id)
+        bot.register_next_step_handler(message, process_dates)
 
 # Функция для обработки полученных дат
 def process_dates(message):
@@ -259,19 +240,13 @@ def count_events(file_path, file_bot_path, start_date, end_date):
     return count_ban, count_warning, count_bot
 
 # Обработчик для сообщений после выбора кнопки "Статус"
-@bot.message_handler(func=lambda message: message.text == "Статус")
+@bot.message_handler(func=lambda message: message.text.strip() == "Статус")
 def status_command(message):
     if str(message.from_user.id) in admin_ids:
-        if str(message.text == "Статус"):
-            try:
-                # Отправляем сообщение со статусом и временем запуска бота
-                bot.send_message(message.from_user.id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
-                bot.delete_message(message.chat.id, message.message_id)
-                bot.register_next_step_handler(message, process_dates)
-            except Exception as e:
-                # Обработка ошибок
-                bot.reply_to(message, f"Произошла ошибка: {e}")
-                bot.delete_message(message.chat.id, message.message_id)
+        # Отправляем сообщение со статусом и временем запуска бота
+        bot.send_message(message.from_user.id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
+        bot.delete_message(message.chat.id, message.message_id)
+        bot.register_next_step_handler(message, process_dates)
 
 # Обработчик для всех сообщений
 @bot.message_handler(func=lambda message: True)
