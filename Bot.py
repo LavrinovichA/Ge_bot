@@ -159,8 +159,7 @@ def add_to_ban_phrases(message):
         bot.send_message(message.from_user.id, "Введите текст для добавления в BAN:")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_ban_phrase)
-    else:
-        bot.register_next_step_handler(message, process_dates)
+
 
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
@@ -179,8 +178,7 @@ def add_to_warning_phrases(message):
         bot.send_message(message.from_user.id, "Введите текст для добавления в WARNING:")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_warning_phrase)
-    else:
-        bot.register_next_step_handler(message, process_dates)
+
 
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
@@ -197,8 +195,6 @@ def handle_statistics(message):
     if str(message.from_user.id) in admin_ids:
         bot.send_message(message.from_user.id,"Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
         bot.delete_message(message.chat.id, message.message_id)
-        bot.register_next_step_handler(message, process_dates)
-    else:
         bot.register_next_step_handler(message, process_dates)
 
 # Функция для обработки полученных дат
@@ -251,9 +247,6 @@ def status_command(message):
         # Отправляем сообщение со статусом и временем запуска бота
         bot.send_message(message.from_user.id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
         bot.delete_message(message.chat.id, message.message_id)
-        bot.register_next_step_handler(message, process_dates)
-    else:
-        bot.register_next_step_handler(message, process_dates)
 
 # Обработчик для всех сообщений
 @bot.message_handler(func=lambda message: True)
