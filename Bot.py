@@ -208,7 +208,7 @@ def process_dates(message):
     file_bot_path = BOT_STAT_FILE
     count_ban, count_warning, count_bot = count_events(file_path, file_bot_path, start_date, end_date)
     bot.send_message(message.chat.id, f"За период с {start_date} по {end_date}:\n"
-                                      f"Забанено {count_ban} сообщений,\n"
+                                      f"Рекламных {count_ban} сообщений,\n"
                                       f"Вынесено {count_warning} предупреждений,\n"
                                       f"Удалено {count_bot} ботов.")
 
