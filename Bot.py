@@ -180,16 +180,18 @@ def add_to_ban_phrases(message):
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_ban_phrase)
 
-
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
     new_phrase = message.text.strip()
     # Добавить новую фразу в файл Banned_phrases.json
     with open("banned_phrases.json", "a", encoding="utf-8") as file:
         file.write(new_phrase + "\n")
+
     # Отправить подтверждение администратору
     bot.send_message(message.from_user.id, f"Фраза '{new_phrase}' успешно добавлена в BAN.")
     banbanned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
+
+    return banbanned_phrases
 
 # Обработчик для сообщений после выбора кнопки "Добавить данные в WARNING"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в WARNING")
@@ -199,15 +201,18 @@ def add_to_warning_phrases(message):
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_warning_phrase)
 
-
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
     new_phrase = message.text.strip()
     # Добавить новую фразу в файл warning_phrases.json
     with open("warning_phrases.json", "a", encoding="utf-8") as file:
         file.write(new_phrase + "\n")
+
+    # Отправить подтверждение администратору
     bot.send_message(message.chat.id, f"Фраза '{new_phrase}' успешно добавлена в WARNING.")
     warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
+
+    return warning_phrases
 
 # Обработчик для сообщений после выбора кнопки "Статистика"
 @bot.message_handler(func=lambda message: message.text.strip() == "Статистика")
