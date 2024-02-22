@@ -1,3 +1,5 @@
+import logging
+
 from imports import *
 
 # Пути к файлам JSON
@@ -10,6 +12,8 @@ ADMINLIST_FILE = "adminlist.json"
 
 # Переменная для времени задержки при удалении сообщения бота (в секундах)
 DELETE_MESSAGE_DELAY = 5
+
+logging.basicConfig(filename='Telebot.log', encoding='utf-8', level=logging.ERROR)
 
 # Функция для чтения токена и id чата из файла
 def read_token_and_chat_id():
@@ -124,7 +128,7 @@ def send_message_to_admins(message):
         try:
             bot.send_message(admin_id, message)
         except telebot.apihelper.ApiException as e:
-            print(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
+            logging.error(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
 
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
@@ -176,7 +180,6 @@ def add_to_ban_phrases(message):
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_ban_phrase)
 
-
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
     new_phrase = message.text.strip()
@@ -194,7 +197,6 @@ def add_to_warning_phrases(message):
         bot.send_message(message.from_user.id, "Введите текст для добавления в WARNING:")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_warning_phrase)
-
 
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
@@ -287,6 +289,7 @@ def handle_all_messages(message):
             sent_message = bot.send_message(message.chat.id, ban_message)
             # Отправка уведомления администраторам
             notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку рекламы:\n'{message.text}'"
+            logging.error(notification_message)
             send_message_to_admins(notification_message)
 
             # Удаление сообщения через 5 секунд
@@ -306,6 +309,7 @@ def handle_all_messages(message):
                 record_ban_event(user_id, user_name, message.text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
                 notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку сообщения с матом:\n'{message.text}'"
+                logging.error(notification_message)
                 send_message_to_admins(notification_message)
 
                 # Удаление сообщения бота через 5 секунд
@@ -331,6 +335,7 @@ def delete(message):
                     bot_name = new_chat_member.username
                     record_bot_add_event(user_id, user_name, bot_id, bot_name)
                     notification_message = f"Пользователь {user_name} (ID: {user_id}) попытался добавить бота:\n'{bot_name}'"
+                    logging.error(notification_message)
                     send_message_to_admins(notification_message)
         # Попытка удалить сообщение
         bot.delete_message(message.chat.id, message.message_id)
@@ -342,11 +347,18 @@ def delete(message):
 while True:
     try:
         bot_start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f"Бот запущен в {bot_start_time}")
+        print(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
+        logging.error(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
+        for admin_id in admin_ids:
+            admin_info = bot.get_chat_member(CHAT_ID, user_id = admin_id)
+            admin_name = admin_info.user.first_name
+            admin_last_name = admin_info.user.last_name
+            if admin_last_name == None:
+                admin_last_name = ''
+            print(admin_name, admin_last_name)
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
-        # Записываем список в файл
-        write_data_to_file(ADMINLIST_FILE, "\n".join(admin_list))
+
     except Exception as e:
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
         time.sleep(10)  # Пауза перед повторной попыткой
