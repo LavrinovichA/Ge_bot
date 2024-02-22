@@ -110,6 +110,22 @@ def delete_message_after_delay(chat_id, message_id, delay):
     time.sleep(delay)
     bot.delete_message(chat_id, message_id)
 
+# Функция для очистки текста
+def preprocess_text(text):
+    # Удаляем все знаки препинания, спец символы и смайлики
+    text = re.sub(r'[^\w\s]', '', text)
+    # Заменяем множественные пробелы на одиночные
+    text = re.sub(r'\s+', ' ', text)
+    return text
+
+# Функция для отправки личных сообщений всем администраторам
+def send_message_to_admins(message):
+    for admin_id in admin_ids:
+        try:
+            bot.send_message(admin_id, message)
+        except telebot.apihelper.ApiException as e:
+            print(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
+
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
 
@@ -252,12 +268,13 @@ def status_command(message):
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     words = ()
-    text = message.text.lower() if message.text else ""
+    text = preprocess_text(message.text.lower()) if message.text else ""
 
     # Проверка, является ли отправитель администратором
     # Не выполняем никаких действий, если отправитель администратор
-    # if str(message.from_user.id) in admin_ids:
-    #    return
+    if str(message.from_user.id) in admin_ids:
+        return
+
     for phrase in banned_phrases:
         words = phrase.split()
         found = all(word.lower() in text for word in words)
@@ -268,6 +285,9 @@ def handle_all_messages(message):
             delete_user_message(message.chat.id, message.message_id)
             record_ban_event(user_id, user_name, message.text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
+            # Отправка уведомления администраторам
+            notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку рекламы:\n'{message.text}'"
+            send_message_to_admins(notification_message)
 
             # Удаление сообщения через 5 секунд
             threading.Thread(target=delete_message_after_delay,
@@ -285,6 +305,8 @@ def handle_all_messages(message):
                 delete_user_message(message.chat.id, message.message_id)
                 record_ban_event(user_id, user_name, message.text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
+                notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку сообщения с матом:\n'{message.text}'"
+                send_message_to_admins(notification_message)
 
                 # Удаление сообщения бота через 5 секунд
                 threading.Thread(target=delete_message_after_delay,
@@ -308,6 +330,8 @@ def delete(message):
                     bot_id = new_chat_member.id
                     bot_name = new_chat_member.username
                     record_bot_add_event(user_id, user_name, bot_id, bot_name)
+                    notification_message = f"Пользователь {user_name} (ID: {user_id}) попытался добавить бота:\n'{bot_name}'"
+                    send_message_to_admins(notification_message)
         # Попытка удалить сообщение
         bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
@@ -321,6 +345,8 @@ while True:
         print(f"Бот запущен в {bot_start_time}")
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
+        # Записываем список в файл
+        write_data_to_file(ADMINLIST_FILE, "\n".join(admin_list))
     except Exception as e:
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
         time.sleep(10)  # Пауза перед повторной попыткой
