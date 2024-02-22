@@ -180,6 +180,7 @@ def add_to_ban_phrases(message):
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_ban_phrase)
 
+
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
     new_phrase = message.text.strip()
@@ -197,6 +198,7 @@ def add_to_warning_phrases(message):
         bot.send_message(message.from_user.id, "Введите текст для добавления в WARNING:")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_warning_phrase)
+
 
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
@@ -290,6 +292,7 @@ def handle_all_messages(message):
             # Отправка уведомления администраторам
             notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку рекламы:\n'{message.text}'"
             logging.error(notification_message)
+            logging.error(message)
             send_message_to_admins(notification_message)
 
             # Удаление сообщения через 5 секунд
@@ -310,6 +313,7 @@ def handle_all_messages(message):
                 sent_message = bot.send_message(message.chat.id, warning_message)
                 notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку сообщения с матом:\n'{message.text}'"
                 logging.error(notification_message)
+                logging.error(message)
                 send_message_to_admins(notification_message)
 
                 # Удаление сообщения бота через 5 секунд
