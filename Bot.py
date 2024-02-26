@@ -297,7 +297,7 @@ def handle_all_messages(message):
             record_ban_event(user_id, user_name, message.text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
             # Отправка уведомления администраторам
-            notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы\nСловосочетание: '{words}'\nСообщение пользователя: '{message.text}'"
+            notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы\nСловосочетание: {words}\nСообщение пользователя: '{message.text}'"
             logging.info(notification_message)
             logging.info(message)
             send_message_to_admins(notification_message)
@@ -318,7 +318,7 @@ def handle_all_messages(message):
                 delete_user_message(message.chat.id, message.message_id)
                 record_ban_event(user_id, user_name, message.text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
-                notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено за отправку сообщения с матом:\nСлово: '{words}'\nСообщение пользователя: '{message.text}'"
+                notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено за отправку сообщения с матом:\nСлово: {words}\nСообщение пользователя: '{message.text}'"
                 logging.info(notification_message)
                 logging.info(message)
                 send_message_to_admins(notification_message)
