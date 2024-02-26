@@ -121,7 +121,7 @@ def delete_message_after_delay(chat_id, message_id, delay):
 # Функция для очистки текста
 def preprocess_text(text):
     # Удаляем все знаки препинания, спец символы и смайлики
-    text = re.sub(r'[^\w\s$]', '', text)
+    text = re.sub(r'[^\w\s]', '', text)
     # Заменяем множественные пробелы на одиночные
     text = re.sub(r'\s+', ' ', text)
     return text
@@ -299,7 +299,7 @@ def handle_all_messages(message):
             record_ban_event(user_id, user_name, message.text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
             # Отправка уведомления администраторам
-            notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку рекламы: \n'{words} '\n'{message.text}'"
+            notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы: \n'{words} '\n'{message.text}'"
             logging.info(notification_message)
             logging.info(message)
             send_message_to_admins(notification_message)
@@ -320,7 +320,7 @@ def handle_all_messages(message):
                 delete_user_message(message.chat.id, message.message_id)
                 record_ban_event(user_id, user_name, message.text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
-                notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку сообщения с матом: \n'{words}' \n'{message.text}'"
+                notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено за отправку сообщения с матом: \n'{words}' \n'{message.text}'"
                 logging.info(notification_message)
                 logging.info(message)
                 send_message_to_admins(notification_message)
