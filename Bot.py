@@ -13,7 +13,10 @@ ADMINLIST_FILE = "adminlist.json"
 # Переменная для времени задержки при удалении сообщения бота (в секундах)
 DELETE_MESSAGE_DELAY = 5
 
-logging.basicConfig(filename='Telebot.log', encoding='utf-8', level=logging.ERROR)
+#Список администраторов для печати
+admins_list = []
+
+logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INFO, format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
 
 # Функция для чтения токена и id чата из файла
 def read_token_and_chat_id():
@@ -37,6 +40,7 @@ def write_data_to_file(filename, data):
             file.write(str(data) + "\n")
         except Exception as e:
             print(f"Ошибка при записи данных в файл: {e}")
+            logging.error(f"Ошибка при записи данных в файл: {e}")
 
 # Функция для чтения данных из файла
 def read_data_from_file(filename):
@@ -117,7 +121,7 @@ def delete_message_after_delay(chat_id, message_id, delay):
 # Функция для очистки текста
 def preprocess_text(text):
     # Удаляем все знаки препинания, спец символы и смайлики
-    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'[^\w\s$]', '', text)
     # Заменяем множественные пробелы на одиночные
     text = re.sub(r'\s+', ' ', text)
     return text
@@ -295,9 +299,9 @@ def handle_all_messages(message):
             record_ban_event(user_id, user_name, message.text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
             # Отправка уведомления администраторам
-            notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку рекламы:\n'{message.text}'"
-            logging.error(notification_message)
-            logging.error(message)
+            notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку рекламы: \n'{words} '\n'{message.text}'"
+            logging.info(notification_message)
+            logging.info(message)
             send_message_to_admins(notification_message)
 
             # Удаление сообщения через 5 секунд
@@ -316,9 +320,9 @@ def handle_all_messages(message):
                 delete_user_message(message.chat.id, message.message_id)
                 record_ban_event(user_id, user_name, message.text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
-                notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку сообщения с матом:\n'{message.text}'"
-                logging.error(notification_message)
-                logging.error(message)
+                notification_message = f"Пользователь {user_name} (ID: {user_id}) был забанен за отправку сообщения с матом: \n'{words}' \n'{message.text}'"
+                logging.info(notification_message)
+                logging.info(message)
                 send_message_to_admins(notification_message)
 
                 # Удаление сообщения бота через 5 секунд
@@ -344,7 +348,7 @@ def delete(message):
                     bot_name = new_chat_member.username
                     record_bot_add_event(user_id, user_name, bot_id, bot_name)
                     notification_message = f"Пользователь {user_name} (ID: {user_id}) попытался добавить бота:\n'{bot_name}'"
-                    logging.error(notification_message)
+                    logging.info(notification_message)
                     send_message_to_admins(notification_message)
         # Попытка удалить сообщение
         bot.delete_message(message.chat.id, message.message_id)
@@ -357,14 +361,16 @@ while True:
     try:
         bot_start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
-        logging.error(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
+        logging.info(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
         for admin_id in admin_ids:
             admin_info = bot.get_chat_member(CHAT_ID, user_id = admin_id)
             admin_name = admin_info.user.first_name
             admin_last_name = admin_info.user.last_name
             if admin_last_name == None:
                 admin_last_name = ''
-            print(admin_name, admin_last_name)
+            admins_list.append(admin_name + ' ' + admin_last_name)
+        print(f'Администраторы {admins_list}')
+        logging.info(admins_list)
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
 
