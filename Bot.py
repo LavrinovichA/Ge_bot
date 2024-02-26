@@ -1,5 +1,3 @@
-import logging
-
 from imports import *
 
 # Пути к файлам JSON
@@ -316,7 +314,7 @@ def handle_all_messages(message):
             if found:
                 user_id = message.from_user.id
                 user_name = message.from_user.first_name
-                warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержало запрещенное в этом чате слово, попробуйте написать иначе."
+                warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержало запрещенное в этом чате слово {words}, попробуйте написать иначе."
                 delete_user_message(message.chat.id, message.message_id)
                 record_ban_event(user_id, user_name, message.text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
