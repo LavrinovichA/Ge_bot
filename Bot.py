@@ -185,9 +185,9 @@ def add_to_ban_phrases(message):
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
     new_phrase = message.text.strip()
+
     # Добавить новую фразу в файл Banned_phrases.json
-    with open("banned_phrases.json", "a", encoding="utf-8") as file:
-        file.write(new_phrase + "\n")
+    write_data_to_file(BANNED_PHRASES_FILE, new_phrase)
 
     # Отправить подтверждение администратору
     bot.send_message(message.from_user.id, f"Фраза '{new_phrase}' успешно добавлена в BAN.")
@@ -206,9 +206,9 @@ def add_to_warning_phrases(message):
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
     new_phrase = message.text.strip()
+
     # Добавить новую фразу в файл warning_phrases.json
-    with open("warning_phrases.json", "a", encoding="utf-8") as file:
-        file.write(new_phrase + "\n")
+    write_data_to_file(WARNING_PHRASES_FILE, new_phrase)
 
     # Отправить подтверждение администратору
     bot.send_message(message.chat.id, f"Фраза '{new_phrase}' успешно добавлена в WARNING.")
