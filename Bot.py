@@ -1,3 +1,5 @@
+import logging
+
 from imports import *
 
 # Пути к файлам JSON
@@ -33,12 +35,19 @@ def read_token_and_chat_id():
             data = json.load(file)
             token = data.get("token")
             chat_id = data.get("chat_id")
-        return token, chat_id
+        if token is not None and chat_id is not None:  # Проверяем, что данные были успешно считаны из файла
+            return token, chat_id
+        else:
+            print(f"Ошибка: Не удалось получить токен и/или ID чата из файла '{TOKEN_FILE}'.")
+            logging.error(f"Ошибка: Не удалось получить токен и/или ID чата из файла '{TOKEN_FILE}'.")
+            return None, None
     except FileNotFoundError:
         print(f"Файл '{TOKEN_FILE}' не найден.")
+        logging.error(f"Файл '{TOKEN_FILE}' не найден.")
         return None, None
     except json.JSONDecodeError:
         print(f"Ошибка при чтении файла '{TOKEN_FILE}': неверный формат JSON.")
+        logging.error(f"Ошибка при чтении файла '{TOKEN_FILE}': неверный формат JSON.")
         return None, None
 
 # Функция для записи данных в файл с указанием кодировки
@@ -321,7 +330,7 @@ def status_command(message):
 def handle_all_messages(message):
     words = ()
     message_text = message.text
-    text = preprocess_text(message_text.lower()) if message_text else ""
+    text = preprocess_text(message_text.lower()) if message_text is not None else ""
     user_id = message.from_user.id
     user_name = message.from_user.first_name
 
