@@ -154,6 +154,9 @@ def preprocess_text(text):
 
 # Функция подсчета сообщений в бане
 def count_message_occurrences(text):
+    if text is None:
+        return None, None
+
     count = 0
     place = ''
     # Проверяем, есть ли значение в кэше для данного сообщения
