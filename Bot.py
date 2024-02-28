@@ -11,8 +11,14 @@ ADMINLIST_FILE = "adminlist.json"
 # Переменная для времени задержки при удалении сообщения бота (в секундах)
 DELETE_MESSAGE_DELAY = 5
 
+#Количество повторяющихся сообщений
+message_count = 3
+
 #Список администраторов для печати
 admins_list = []
+
+#Определяем словарь для кэширования сообщений
+message_occurrences_cache = {}
 
 logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INFO, format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
 
@@ -69,6 +75,7 @@ def record_ban_event(user_id, user_name, message_text, event_type):
             file.write("\n")
         except Exception as e:
             print(f"Ошибка при записи данных в файл: {e}")
+    return BANSTAT_FILE
 
 # Функция для записи попытки добавления бота
 def record_bot_add_event(user_id, user_name, bot_id, bot_name):
@@ -125,12 +132,40 @@ def preprocess_text(text):
     return text
 
 # Функция для отправки личных сообщений всем администраторам
-def send_message_to_admins(message):
+#def send_message_to_admins(message):
+#    for admin_id in admin_ids:
+#        try:
+#            bot.send_message(admin_id, message)
+#        except telebot.apihelper.ApiException as e:
+#            logging.error(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
+
+#Функция подсчета сообщений в бане
+def count_message_occurrences(text):
+    count = 0
+    # Проверяем, есть ли значение в кэше для данного сообщения
+    if text in message_occurrences_cache:
+        return message_occurrences_cache
+
+    with open(BANSTAT_FILE, "r", encoding="utf-8") as file:
+        for line in file:
+            entry = json.loads(line)
+            if entry.get("message_text") == text:
+                count += 1
+            if count > message_count:
+                # Сохраняем результат в кэше
+                message_occurrences_cache[text] = count
+                return message_occurrences_cache
+
+#Функция логирования и отправки сообщения админам
+def log_and_admin_message (notification_message):
+    logging.info(notification_message)
     for admin_id in admin_ids:
         try:
-            bot.send_message(admin_id, message)
+            bot.send_message(admin_id, notification_message)
         except telebot.apihelper.ApiException as e:
             logging.error(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
+    
+
 
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
@@ -279,28 +314,39 @@ def status_command(message):
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     words = ()
-    text = preprocess_text(message.text.lower()) if message.text else ""
+    message_text = message.text
+    text = preprocess_text(message_text.lower()) if message_text else ""
+    user_id = message.from_user.id
+    user_name = message.from_user.first_name
 
     # Проверка, является ли отправитель администратором
     # Не выполняем никаких действий, если отправитель администратор
-    if str(message.from_user.id) in admin_ids:
+    #if str(message.from_user.id) in admin_ids:
+    #   return
+
+    # Проверяем повторяется ли это сообщение в файле BANSTAT_FILE
+    if count_message_occurrences(message_text):
+        notification_message = f"Пользователь{user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n{message_text}\n рекомендую банить"
+        print(notification_message)
+        delete_user_message(message.chat.id, message.message_id)
+    #    bot.kick_chat_member(CHAT_ID, user_id)
+    # Заменить 'MUTE_DURATION' на длительность мута в секундах
+    #    bot.restrict_chat_member('CHAT_ID', 'USER_ID', until_date=time.time() + MUTE_DURATION, can_send_messages=False)
+        record_ban_event(user_id, user_name, message_text, "BAN")
+        log_and_admin_message(notification_message)
         return
 
     for phrase in banned_phrases:
         words = phrase.split()
         found = all(word.lower() in text for word in words)
         if found:
-            user_id = message.from_user.id
-            user_name = message.from_user.first_name
             ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
             delete_user_message(message.chat.id, message.message_id)
-            record_ban_event(user_id, user_name, message.text, "BAN")
+            record_ban_event(user_id, user_name, message_text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
             # Отправка уведомления администраторам
             notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы\nСловосочетание: {words}\nСообщение пользователя: '{message.text}'"
-            logging.info(notification_message)
-            logging.info(message)
-            send_message_to_admins(notification_message)
+            log_and_admin_message(notification_message)
 
             # Удаление сообщения через 5 секунд
             threading.Thread(target=delete_message_after_delay,
@@ -316,12 +362,10 @@ def handle_all_messages(message):
                 user_name = message.from_user.first_name
                 warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержало запрещенное в этом чате слово {words}, попробуйте написать иначе."
                 delete_user_message(message.chat.id, message.message_id)
-                record_ban_event(user_id, user_name, message.text, "WARNING")
+                record_ban_event(user_id, user_name, message_text, "WARNING")
                 sent_message = bot.send_message(message.chat.id, warning_message)
                 notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено за отправку сообщения с матом:\nСлово: {words}\nСообщение пользователя: '{message.text}'"
-                logging.info(notification_message)
-                logging.info(message)
-                send_message_to_admins(notification_message)
+                log_and_admin_message(notification_message)
 
                 # Удаление сообщения бота через 5 секунд
                 threading.Thread(target=delete_message_after_delay,
@@ -346,8 +390,7 @@ def delete(message):
                     bot_name = new_chat_member.username
                     record_bot_add_event(user_id, user_name, bot_id, bot_name)
                     notification_message = f"Пользователь {user_name} (ID: {user_id}) попытался добавить бота:\n'{bot_name}'"
-                    logging.info(notification_message)
-                    send_message_to_admins(notification_message)
+                    log_and_admin_message(notification_message)
         # Попытка удалить сообщение
         bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
