@@ -11,16 +11,24 @@ ADMINLIST_FILE = "adminlist.json"
 # Переменная для времени задержки при удалении сообщения бота (в секундах)
 DELETE_MESSAGE_DELAY = 5
 
-#Количество повторяющихся сообщений
+# Количество повторяющихся сообщений
 message_count = 3
 
-#Список администраторов для печати
+# Список администраторов для печати
 admins_list = []
 
-#Определяем словарь для кэширования сообщений
+# Определяем словарь для кэширования сообщений
 message_occurrences_cache = {}
 
-logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INFO, format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
+# для тестирования
+place = ''
+
+#Если используем мут в секундах
+#MUTE_DURATION = 600000
+
+logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INFO,
+                    format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
+
 
 # Функция для чтения токена и id чата из файла
 def read_token_and_chat_id():
@@ -37,6 +45,7 @@ def read_token_and_chat_id():
         print(f"Ошибка при чтении файла '{TOKEN_FILE}': неверный формат JSON.")
         return None, None
 
+
 # Функция для записи данных в файл с указанием кодировки
 def write_data_to_file(filename, data):
     with open(filename, "a", encoding="utf-8") as file:
@@ -45,6 +54,7 @@ def write_data_to_file(filename, data):
         except Exception as e:
             print(f"Ошибка при записи данных в файл: {e}")
             logging.error(f"Ошибка при записи данных в файл: {e}")
+
 
 # Функция для чтения данных из файла
 def read_data_from_file(filename):
@@ -56,9 +66,11 @@ def read_data_from_file(filename):
         data = []
     return data
 
+
 # Функция для удаления сообщения пользователя
 def delete_user_message(chat_id, message_id):
     bot.delete_message(chat_id, message_id)
+
 
 # Функция для записи события бана в файл
 def record_ban_event(user_id, user_name, message_text, event_type):
@@ -77,6 +89,7 @@ def record_ban_event(user_id, user_name, message_text, event_type):
             print(f"Ошибка при записи данных в файл: {e}")
     return BANSTAT_FILE
 
+
 # Функция для записи попытки добавления бота
 def record_bot_add_event(user_id, user_name, bot_id, bot_name):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -93,10 +106,12 @@ def record_bot_add_event(user_id, user_name, bot_id, bot_name):
         except Exception as e:
             print(f"Ошибка при записи данных в файл: {e}")
 
+
 # Функция для очистки файла
 def clear_file(filename):
     with open(filename, "w"):
         pass
+
 
 # Функция для чтения токена и id чата
 TOKEN, CHAT_ID = read_token_and_chat_id()
@@ -106,6 +121,7 @@ bot = telebot.TeleBot(TOKEN)
 
 # Устанавливаем параметр skip_bot для обработки сообщений от других ботов
 bot.skip_pending = False
+
 
 # Функция для получения списка идентификаторов администраторов чата
 def get_chat_admins(chat_id):
@@ -118,10 +134,12 @@ def get_chat_admins(chat_id):
         print("Ошибка при получении администраторов чата:", e)
     return admins
 
+
 # Функция для удаления сообщения через 5 секунд
 def delete_message_after_delay(chat_id, message_id, delay):
     time.sleep(delay)
     bot.delete_message(chat_id, message_id)
+
 
 # Функция для очистки текста
 def preprocess_text(text):
@@ -131,20 +149,22 @@ def preprocess_text(text):
     text = re.sub(r'\s+', ' ', text)
     return text
 
+
 # Функция для отправки личных сообщений всем администраторам
-#def send_message_to_admins(message):
+# def send_message_to_admins(message):
 #    for admin_id in admin_ids:
 #        try:
 #            bot.send_message(admin_id, message)
 #        except telebot.apihelper.ApiException as e:
 #            logging.error(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
 
-#Функция подсчета сообщений в бане
+# Функция подсчета сообщений в бане
 def count_message_occurrences(text):
     count = 0
     # Проверяем, есть ли значение в кэше для данного сообщения
     if text in message_occurrences_cache:
-        return message_occurrences_cache
+        place = 'в памяти'
+        return message_occurrences_cache, place
 
     with open(BANSTAT_FILE, "r", encoding="utf-8") as file:
         for line in file:
@@ -154,17 +174,18 @@ def count_message_occurrences(text):
             if count > message_count:
                 # Сохраняем результат в кэше
                 message_occurrences_cache[text] = count
-                return message_occurrences_cache
+                place = 'в файле'
+                return message_occurrences_cache, place
 
-#Функция логирования и отправки сообщения админам
-def log_and_admin_message (notification_message):
+
+# Функция логирования и отправки сообщения админам
+def log_and_admin_message(notification_message):
     logging.info(notification_message)
     for admin_id in admin_ids:
         try:
             bot.send_message(admin_id, notification_message)
         except telebot.apihelper.ApiException as e:
             logging.error(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
-    
 
 
 # Получение списка администраторов чата
@@ -184,6 +205,7 @@ clear_file(ADMINLIST_FILE)
 
 # Записываем список в файл
 write_data_to_file(ADMINLIST_FILE, "\n".join(admin_list))
+
 
 # Обработчик команды /start
 @bot.message_handler(commands=["start", "help", "settings", "any_other_command"])
@@ -209,6 +231,7 @@ def handle_commands(message):
     if str(message.text.strip()) == "/start":
         bot.delete_message(message.chat.id, message.message_id)
 
+
 # Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
 def add_to_ban_phrases(message):
@@ -216,6 +239,7 @@ def add_to_ban_phrases(message):
         bot.send_message(message.from_user.id, "Введите текст для добавления в BAN:")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_ban_phrase)
+
 
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
@@ -230,6 +254,7 @@ def process_ban_phrase(message):
 
     return banbanned_phrases
 
+
 # Обработчик для сообщений после выбора кнопки "Добавить данные в WARNING"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в WARNING")
 def add_to_warning_phrases(message):
@@ -237,6 +262,7 @@ def add_to_warning_phrases(message):
         bot.send_message(message.from_user.id, "Введите текст для добавления в WARNING:")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_warning_phrase)
+
 
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
@@ -251,13 +277,16 @@ def process_warning_phrase(message):
 
     return warning_phrases
 
+
 # Обработчик для сообщений после выбора кнопки "Статистика"
 @bot.message_handler(func=lambda message: message.text.strip() == "Статистика")
 def handle_statistics(message):
     if str(message.from_user.id) in admin_ids:
-        bot.send_message(message.from_user.id,"Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
+        bot.send_message(message.from_user.id,
+                         "Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_dates)
+
 
 # Функция для обработки полученных дат
 def process_dates(message):
@@ -277,6 +306,7 @@ def process_dates(message):
                                       f"Рекламных {count_ban} сообщений,\n"
                                       f"Вынесено {count_warning} предупреждений,\n"
                                       f"Удалено {count_bot} ботов.")
+
 
 # Функция для подсчета событий в указанном диапазоне дат
 def count_events(file_path, file_bot_path, start_date, end_date):
@@ -302,6 +332,7 @@ def count_events(file_path, file_bot_path, start_date, end_date):
                 count_bot += 1
     return count_ban, count_warning, count_bot
 
+
 # Обработчик для сообщений после выбора кнопки "Статус"
 @bot.message_handler(func=lambda message: message.text.strip() == "Статус")
 def status_command(message):
@@ -309,6 +340,7 @@ def status_command(message):
         # Отправляем сообщение со статусом и временем запуска бота
         bot.send_message(message.from_user.id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
         bot.delete_message(message.chat.id, message.message_id)
+
 
 # Обработчик для всех сообщений
 @bot.message_handler(func=lambda message: True)
@@ -321,17 +353,17 @@ def handle_all_messages(message):
 
     # Проверка, является ли отправитель администратором
     # Не выполняем никаких действий, если отправитель администратор
-    #if str(message.from_user.id) in admin_ids:
-    #   return
+    if str(message.from_user.id) in admin_ids:
+        return
 
     # Проверяем повторяется ли это сообщение в файле BANSTAT_FILE
     if count_message_occurrences(message_text):
-        notification_message = f"Пользователь{user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n{message_text}\n рекомендую банить"
-        print(notification_message)
+        notification_message = f"Пользователь{user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nНашел его {place} рекомендую банить"
+        #print(notification_message)
         delete_user_message(message.chat.id, message.message_id)
-    #    bot.kick_chat_member(CHAT_ID, user_id)
-    # Заменить 'MUTE_DURATION' на длительность мута в секундах
-    #    bot.restrict_chat_member('CHAT_ID', 'USER_ID', until_date=time.time() + MUTE_DURATION, can_send_messages=False)
+        #    bot.kick_chat_member(CHAT_ID, user_id)
+        # Заменить 'MUTE_DURATION' на длительность мута в секундах
+        #    bot.restrict_chat_member('CHAT_ID', 'USER_ID', until_date=time.time() + MUTE_DURATION, can_send_messages=False)
         record_ban_event(user_id, user_name, message_text, "BAN")
         log_and_admin_message(notification_message)
         return
@@ -372,6 +404,7 @@ def handle_all_messages(message):
                                  args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
                 break
 
+
 # Удаление сообщений о вступлении и выходе из чата
 @bot.message_handler(content_types=['new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo',
                                     'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created',
@@ -397,6 +430,7 @@ def delete(message):
         # Обработка ошибок
         print(f"Произошла ошибка: {e}")
 
+
 # Запуск бота
 while True:
     try:
@@ -404,7 +438,7 @@ while True:
         print(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
         logging.info(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
         for admin_id in admin_ids:
-            admin_info = bot.get_chat_member(CHAT_ID, user_id = admin_id)
+            admin_info = bot.get_chat_member(CHAT_ID, user_id=admin_id)
             admin_name = admin_info.user.first_name
             admin_last_name = admin_info.user.last_name
             if admin_last_name == None:
