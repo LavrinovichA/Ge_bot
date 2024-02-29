@@ -155,7 +155,6 @@ def preprocess_text(text):
 # Функция подсчета сообщений в бане
 def count_message_occurrences(text):
     count = 0
-
     # Проверяем, есть ли значение в кэше для данного сообщения
     if text in message_occurrences_cache:
         return message_occurrences_cache
@@ -328,8 +327,6 @@ def status_command(message):
 def handle_all_messages(message):
     words = ()
     message_text = message.text
-# Для отладки
-    logging.info(message_text)
     text = preprocess_text(message_text.lower()) if message_text is not None else ""
     user_id = message.from_user.id
     user_name = message.from_user.first_name
