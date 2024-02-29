@@ -154,15 +154,11 @@ def preprocess_text(text):
 
 # Функция подсчета сообщений в бане
 def count_message_occurrences(text):
-    if text is None:
-        return None, None
-
     count = 0
-    place = ''
+
     # Проверяем, есть ли значение в кэше для данного сообщения
     if text in message_occurrences_cache:
-        place = 'в памяти'
-        return message_occurrences_cache, place
+        return message_occurrences_cache
 
     with open(BANSTAT_FILE, "r", encoding="utf-8") as file:
         for line in file:
@@ -172,8 +168,7 @@ def count_message_occurrences(text):
             if count > message_count:
                 # Сохраняем результат в кэше
                 message_occurrences_cache[text] = count
-                place = 'в файле'
-                return message_occurrences_cache, place
+                return message_occurrences_cache
 
 # Функция логирования и отправки сообщения админам
 def log_and_admin_message(notification_message):
@@ -333,6 +328,8 @@ def status_command(message):
 def handle_all_messages(message):
     words = ()
     message_text = message.text
+# Для отладки
+    logging.info(message_text)
     text = preprocess_text(message_text.lower()) if message_text is not None else ""
     user_id = message.from_user.id
     user_name = message.from_user.first_name
@@ -343,10 +340,8 @@ def handle_all_messages(message):
         return
 
     # Проверяем повторяется ли это сообщение в файле BANSTAT_FILE
-    # следующую строку убрать после отладки, переменную place не использовать, count_message_occurrences(message_text) перенести в if
-    result, place = count_message_occurrences(message_text)
-    if result:
-        notification_message = f"Пользователь {user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nНашел его {place}, рекомендую банить"
+    if count_message_occurrences(message_text):
+        notification_message = f"Пользователь {user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nРекомендую банить!"
         delete_user_message(message.chat.id, message.message_id)
         #    bot.kick_chat_member(CHAT_ID, user_id)
         #    Заменить 'MUTE_DURATION' на длительность мута в секундах
@@ -417,6 +412,7 @@ def delete(message):
     except Exception as e:
         # Обработка ошибок
         print(f"Произошла ошибка: {e}")
+        logging.error(f"Произошла ошибка: {e}")
 
 # Запуск бота
 while True:
@@ -432,10 +428,11 @@ while True:
                 admin_last_name = ''
             admins_list.append(admin_name + ' ' + admin_last_name)
         print(f'Администраторы {admins_list}')
-        logging.info(admins_list)
+#        logging.info(admins_list)
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
 
     except Exception as e:
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
+        logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
         time.sleep(10)  # Пауза перед повторной попыткой
