@@ -325,7 +325,7 @@ def status_command(message):
         bot.delete_message(message.chat.id, message.message_id)
 
 #Обработка сообщений с фото
-@bot.message_handler(content_types=['photo'])
+@bot.message_handler(content_types=['photo', 'audio', 'documents', 'video', 'voice', 'sticker'])
 def handle_photo(message):
     # Обработка подписи к фотографии, если есть
     if message.caption:
