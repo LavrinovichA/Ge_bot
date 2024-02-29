@@ -230,6 +230,7 @@ def add_to_ban_phrases(message):
 
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
+    global banned_phrases
     new_phrase = message.text.strip()
 
     # Добавить новую фразу в файл Banned_phrases.json
@@ -251,6 +252,7 @@ def add_to_warning_phrases(message):
 
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
+    global warning_phrases
     new_phrase = message.text.strip()
 
     # Добавить новую фразу в файл warning_phrases.json
@@ -328,7 +330,6 @@ def handle_photo(message):
     # Обработка подписи к фотографии, если есть
     if message.caption:
         message_text = message.caption
-        # Передаем message_text в обработчик текстовых сообщений
         handle_text_messages(message, message_text)
 
 #Обработка всех текстовых сообщений
@@ -345,6 +346,8 @@ def handle_text_messages(message, message_text=None):
 
     #Если нет текста не выполняем дальше
     if message_text is None:
+        message_text = message.text
+        if message_text is None:
             return
 
     # Проверка на повторяющиеся сообщения
@@ -365,7 +368,7 @@ def handle_text_messages(message, message_text=None):
     # Проверка на наличие рекламных сообщений
     for phrase in banned_phrases:
         words = phrase.split()
-        found = all(word.lower() in text for word in words)
+        found = all(word.lower() in text.lower() for word in words)
         if found:
             ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
             delete_user_message(message.chat.id, message.message_id)
