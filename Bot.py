@@ -175,8 +175,9 @@ def log_and_admin_message(notification_message):
     for admin_id in admin_ids:
         try:
             bot.send_message(admin_id, notification_message)
+            logging.info(f'Отправлено {admin_id}')
         except telebot.apihelper.ApiException as e:
-            logging.error(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
+            logging.error(f"Не удалось отправить {admin_id}: {e}")
 
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
@@ -374,7 +375,7 @@ def handle_text_messages(message, message_text=None):
             delete_user_message(message.chat.id, message.message_id)
             record_ban_event(user_id, user_name, message_text, "BAN")
             sent_message = bot.send_message(message.chat.id, ban_message)
-            notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы\nСловосочетание:\n{phrase}\nСообщение пользователя:\n'{message_text}'"
+            notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы\nСловосочетание:\n'{phrase}'\nСообщение пользователя:\n'{message_text}'"
             log_and_admin_message(notification_message)
             threading.Thread(target=delete_message_after_delay, args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
             break
