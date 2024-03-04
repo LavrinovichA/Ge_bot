@@ -23,7 +23,7 @@ admins_list = []
 message_occurrences_cache = {}
 
 #Если используем мут в секундах
-#MUTE_DURATION = 600000
+#MUTE_DURATION = 604800
 
 logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INFO,
                     format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
