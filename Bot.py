@@ -224,21 +224,25 @@ def handle_commands(message):
 # Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
 def add_to_ban_phrases(message):
-    if str(message.from_user.id) in admin_ids:
-        bot.send_message(message.from_user.id, "Введите текст для добавления в BAN:")
+    user_id = message.from_user.id
+
+    if str(user_id) in admin_ids:
+        bot.send_message(user_id, "Введите текст для добавления в BAN:")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_ban_phrase)
 
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message):
     global banned_phrases
+    user_id = message.from_user.id
     new_phrase = message.text.strip()
 
     # Добавить новую фразу в файл Banned_phrases.json
     write_data_to_file(BANNED_PHRASES_FILE, new_phrase)
 
     # Отправить подтверждение администратору
-    bot.send_message(message.from_user.id, f"Фраза\n'{new_phrase}'\nуспешно добавлена в BAN.")
+    bot.send_message(user_id, f"Фраза\n'{new_phrase}'\nуспешно добавлена в BAN.")
+    logging.info(f'{user_id} добавил фарзы "{new_phrase}" BAN')
     banned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
 
     return banned_phrases
@@ -246,21 +250,25 @@ def process_ban_phrase(message):
 # Обработчик для сообщений после выбора кнопки "Добавить данные в WARNING"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в WARNING")
 def add_to_warning_phrases(message):
-    if str(message.from_user.id) in admin_ids:
-        bot.send_message(message.from_user.id, "Введите текст для добавления в WARNING:")
+    user_id = message.from_user.id
+
+    if str(user_id) in admin_ids:
+        bot.send_message(user_id, "Введите текст для добавления в WARNING:")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_warning_phrase)
 
 # Функция для обработки текста, который нужно добавить в WARNING
 def process_warning_phrase(message):
     global warning_phrases
+    user_id = message.from_user.id
     new_phrase = message.text.strip()
 
     # Добавить новую фразу в файл warning_phrases.json
     write_data_to_file(WARNING_PHRASES_FILE, new_phrase)
 
     # Отправить подтверждение администратору
-    bot.send_message(message.chat.id, f"Фраза\n'{new_phrase}'\nуспешно добавлена в WARNING.")
+    bot.send_message(user_id, f"Фраза\n'{new_phrase}'\nуспешно добавлена в WARNING.")
+    logging.info(f'{user_id} добавил фарзы "{new_phrase}" в Warning')
     warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
 
     return warning_phrases
