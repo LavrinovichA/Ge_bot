@@ -164,7 +164,7 @@ def count_message_occurrences(text):
             entry = json.loads(line)
             if entry.get("message_text") == text:
                 count += 1
-            if count > message_count:
+            if count >= message_count:
                 # Сохраняем результат в кэше
                 message_occurrences_cache[text] = count
                 return message_occurrences_cache
