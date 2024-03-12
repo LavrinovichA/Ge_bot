@@ -23,7 +23,7 @@ admins_list = []
 message_occurrences_cache = {}
 
 #Если используем мут в секундах
-#MUTE_DURATION = 604800
+MUTE_DURATION = 1209600
 
 logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INFO,
                     format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
@@ -144,14 +144,6 @@ def preprocess_text(text):
     text = re.sub(r'\s+', ' ', text)
     return text
 
-# Функция для отправки личных сообщений всем администраторам
-# def send_message_to_admins(message):
-#    for admin_id in admin_ids:
-#        try:
-#            bot.send_message(admin_id, message)
-#        except telebot.apihelper.ApiException as e:
-#            logging.error(f"Не удалось отправить сообщение администратору {admin_id}: {e}")
-
 # Функция подсчета сообщений в бане
 def count_message_occurrences(text):
     count = 0
@@ -200,9 +192,13 @@ write_data_to_file(ADMINLIST_FILE, "\n".join(admin_list))
 # Обработчик команды /start
 @bot.message_handler(commands=["start", "help", "settings", "any_other_command"])
 def handle_commands(message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+    message_text = message.text.strip()
+
     # Проверка, что команда отправлена в личном сообщении и отправитель является администратором
-    if str(message.from_user.id) in admin_ids:
-        if str(message.text.strip() == "/start"):
+    if str(user_id) in admin_ids:
+        if str(message_text == "/start"):
             # Создаем клавиатуру
             keyboard = types.ReplyKeyboardMarkup(row_width=2)
             button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика", "Статус"]
@@ -211,15 +207,14 @@ def handle_commands(message):
                 keyboard.add(button)
             # Отправляем сообщение с клавиатурой в личное сообщение администратору
             try:
-                bot.send_message(message.from_user.id, "Выберите действие:", reply_markup=keyboard)
+                bot.send_message(user_id, "Выберите действие:", reply_markup=keyboard)
             except ApiTelegramException as e:
                 if e.error_code == 403:
-                    bot.send_message(message.chat.id,
-                                     "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.")
+                    bot.send_message(chat_id, "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.")
                 else:
-                    bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
-    if str(message.text.strip()) == "/start":
-        bot.delete_message(message.chat.id, message.message_id)
+                    bot.send_message(chat_id, f"Произошла ошибка: {e}")
+    if str(message_text) == "/start":
+        bot.delete_message(chat_id, message.message_id)
 
 # Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
@@ -276,27 +271,28 @@ def process_warning_phrase(message, user_id):
 # Обработчик для сообщений после выбора кнопки "Статистика"
 @bot.message_handler(func=lambda message: message.text.strip() == "Статистика")
 def handle_statistics(message):
-    if str(message.from_user.id) in admin_ids:
-        bot.send_message(message.from_user.id,
-                         "Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
+    user_id = message.from_user.id
+    if str(user_id) in admin_ids:
+        bot.send_message(user_id,"Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_dates)
 
 # Функция для обработки полученных дат
 def process_dates(message):
     date_range = message.text.split()
+    chat_id = message.chat.id
     if len(date_range) == 1:
         start_date = end_date = date_range[0]
     elif len(date_range) == 2:
         start_date, end_date = date_range
     else:
-        bot.send_message(message.chat.id, "Неправильный формат ввода. Попробуйте снова.")
+        bot.send_message(chat_id, "Неправильный формат ввода. Попробуйте снова.")
         return
 
     file_path = BANSTAT_FILE
     file_bot_path = BOT_STAT_FILE
     count_ban, count_warning, count_bot = count_events(file_path, file_bot_path, start_date, end_date)
-    bot.send_message(message.chat.id, f"За период с {start_date} по {end_date}:\n"
+    bot.send_message(chat_id, f"За период с {start_date} по {end_date}:\n"
                                       f"Рекламных {count_ban} сообщений,\n"
                                       f"Вынесено {count_warning} предупреждений,\n"
                                       f"Удалено {count_bot} ботов.")
@@ -328,9 +324,11 @@ def count_events(file_path, file_bot_path, start_date, end_date):
 # Обработчик для сообщений после выбора кнопки "Статус"
 @bot.message_handler(func=lambda message: message.text.strip() == "Статус")
 def status_command(message):
-    if str(message.from_user.id) in admin_ids:
+    user_id = message.from_user.id
+
+    if str(user_id) in admin_ids:
         # Отправляем сообщение со статусом и временем запуска бота
-        bot.send_message(message.from_user.id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
+        bot.send_message(user_id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
         bot.delete_message(message.chat.id, message.message_id)
 
 #Обработка сообщений с фото
@@ -346,6 +344,8 @@ def handle_photo(message):
 def handle_text_messages(message, message_text=None):
     user_id = message.from_user.id
     user_name = message.from_user.first_name
+    chat_id = message.chat.id
+    message_id = message.message_id
     words = ()
 
     # Проверка, является ли отправитель администратором
@@ -361,14 +361,14 @@ def handle_text_messages(message, message_text=None):
 
     # Проверка на повторяющиеся сообщения
     if count_message_occurrences(message_text):
-        notification_message = f"Пользователь {user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nРекомендую банить!"
-        delete_user_message(message.chat.id, message.message_id)
+        delete_user_message(chat_id, message_id)
+        notification_message = f"Пользователь {user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nя его замутил на 14 дней"
         record_ban_event(user_id, user_name, message_text, "BAN")
         log_and_admin_message(notification_message)
         #bot.kick_chat_member(CHAT_ID, user_id)
         #Заменить 'MUTE_DURATION' на длительность мута в секундах
-        #bot.restrict_chat_member('CHAT_ID', 'USER_ID', until_date=time.time() + MUTE_DURATION, can_send_messages=False)
-        #logging.info(f"Пользователь {user_name} (ID: {user_id}, забанен")
+        bot.restrict_chat_member(chat_id, user_id, until_date = time.time() + MUTE_DURATION, can_send_messages=False)
+        logging.info(f"Пользователь {user_name} ID: {user_id}, заблокирован на 14 дней")
         return
 
     #Приводим текст в единый формат
@@ -380,9 +380,9 @@ def handle_text_messages(message, message_text=None):
         found = all(word.lower() in text.lower() for word in words)
         if found:
             ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
-            delete_user_message(message.chat.id, message.message_id)
+            delete_user_message(chat_id, message_id)
             record_ban_event(user_id, user_name, message_text, "BAN")
-            sent_message = bot.send_message(message.chat.id, ban_message)
+            sent_message = bot.send_message(chat_id, ban_message)
             notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы\nСловосочетание:\n'{phrase}'\nСообщение пользователя:\n'{message_text}'"
             log_and_admin_message(notification_message)
             threading.Thread(target=delete_message_after_delay, args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
@@ -395,9 +395,9 @@ def handle_text_messages(message, message_text=None):
             found = any(len(word) == len(word.lower()) and word.lower() in text.split() for word in words)
             if found:
                 warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержало запрещенное в этом чате слово {phrase}, попробуйте написать иначе."
-                delete_user_message(message.chat.id, message.message_id)
+                delete_user_message(chat_id, message_id)
                 record_ban_event(user_id, user_name, message_text, "WARNING")
-                sent_message = bot.send_message(message.chat.id, warning_message)
+                sent_message = bot.send_message(chat_id, warning_message)
                 notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено за отправку сообщения с матом:\nСлово:\n{phrase}\nСообщение пользователя:\n'{message_text}'"
                 log_and_admin_message(notification_message)
                 threading.Thread(target=delete_message_after_delay, args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
@@ -436,7 +436,7 @@ while True:
         print(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
         logging.info(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
         for admin_id in admin_ids:
-            admin_info = bot.get_chat_member(CHAT_ID, user_id=admin_id)
+            admin_info = bot.get_chat_member(CHAT_ID, user_id = admin_id)
             admin_name = admin_info.user.first_name
             admin_last_name = admin_info.user.last_name
             if admin_last_name == None:
