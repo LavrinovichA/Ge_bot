@@ -16,9 +16,6 @@ DELETE_MESSAGE_DELAY = 5
 # Количество повторяющихся сообщений
 message_count = 3
 
-# Список администраторов для печати
-admins_list = []
-
 # Определяем словарь для кэширования сообщений
 message_occurrences_cache = {}
 
@@ -120,6 +117,10 @@ bot = telebot.TeleBot(TOKEN)
 # Устанавливаем параметр skip_bot для обработки сообщений от других ботов
 bot.skip_pending = False
 
+#ID бота
+bot_info = bot.get_me()
+BOT_ID = bot_info.id
+
 # Функция для получения списка идентификаторов администраторов чата
 def get_chat_admins(chat_id):
     admins = []
@@ -165,6 +166,8 @@ def count_message_occurrences(text):
 def log_and_admin_message(notification_message):
     logging.info(notification_message)
     for admin_id in admin_ids:
+        if admin_id == BOT_ID:
+            continue
         try:
             bot.send_message(admin_id, notification_message)
             logging.info(f'Отправлено {admin_id}')
@@ -435,6 +438,8 @@ while True:
         bot_start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
         logging.info(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
+        # Список администраторов для печати
+        admins_list = []
         for admin_id in admin_ids:
             admin_info = bot.get_chat_member(CHAT_ID, user_id = admin_id)
             admin_name = admin_info.user.first_name
@@ -443,7 +448,6 @@ while True:
                 admin_last_name = ''
             admins_list.append(admin_name + ' ' + admin_last_name)
         print(f'Администраторы {admins_list}')
-#        logging.info(admins_list)
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
 
