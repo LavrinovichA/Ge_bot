@@ -165,7 +165,7 @@ def count_message_occurrences(text):
 def log_and_admin_message(notification_message):
     logging.info(notification_message)
     for admin_id in admin_ids:
-        if admin_id == BOT_ID:
+        if str(admin_id) == str(BOT_ID):
             continue
         try:
             bot.send_message(admin_id, notification_message)
