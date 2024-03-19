@@ -118,8 +118,7 @@ bot = telebot.TeleBot(TOKEN)
 bot.skip_pending = False
 
 #ID бота
-bot_info = bot.get_me()
-BOT_ID = bot_info.id
+BOT_ID = bot.get_me().id
 
 # Функция для получения списка идентификаторов администраторов чата
 def get_chat_admins(chat_id):
@@ -436,8 +435,9 @@ def delete(message):
 while True:
     try:
         bot_start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
-        logging.info(f"Бот запущен в {bot_start_time} в чате {CHAT_ID}")
+        chat_title = bot.get_chat(CHAT_ID).title
+        print(f"Бот запущен в {bot_start_time} в чате {chat_title}")
+        logging.info(f"Бот запущен в {bot_start_time} в чате ID{CHAT_ID}, {chat_title}")
         # Список администраторов для печати
         admins_list = []
         for admin_id in admin_ids:
