@@ -71,12 +71,13 @@ def delete_user_message(chat_id, message_id):
     bot.delete_message(chat_id, message_id)
 
 # Функция для записи события бана в файл
-def record_ban_event(user_id, user_name, message_text, event_type):
+def record_ban_event(user_id, user_name, message_text, phrase, event_type):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     entry = {
         "timestamp": current_time,
         "user_id": user_id,
         "user_name": user_name,
+        "ban_phrase": phrase,
         "message_text": message_text,
         "event_type": event_type}
     with open(BANSTAT_FILE, "a", encoding="utf-8") as file:
@@ -143,10 +144,10 @@ def preprocess_text(text):
     # Заменяем множественные пробелы на одиночные
     text = re.sub(r'\s+', ' ', text)
 
+    ###
     # Создаем словарь для замены латинских букв на кириллические
     replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
                         'n': 'п', 'm': 'т', 't': 'т', 'b': 'б'}
-
     # Проходим по каждому слову в тексте
     words = text.split()
     result = []
@@ -390,7 +391,7 @@ def handle_text_messages(message, message_text=None):
     if count_message_occurrences(message_text):
         delete_user_message(chat_id, message_id)
         notification_message = f"Пользователь {user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nя его замутил на 14 дней"
-        record_ban_event(user_id, user_name, message_text, "BAN")
+        record_ban_event(user_id, user_name, message_text,'',"BAN")
         log_and_admin_message(notification_message)
         #bot.kick_chat_member(CHAT_ID, user_id)
         #Заменить 'MUTE_DURATION' на длительность мута в секундах
@@ -400,7 +401,6 @@ def handle_text_messages(message, message_text=None):
 
     #Приводим текст в единый формат
     text = preprocess_text(message_text)
-    print(text)
 
     # Проверка на наличие рекламных сообщений
     for phrase in banned_phrases:
@@ -409,7 +409,7 @@ def handle_text_messages(message, message_text=None):
         if found:
             ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
             delete_user_message(chat_id, message_id)
-            record_ban_event(user_id, user_name, message_text, "BAN")
+            record_ban_event(user_id, user_name, message_text, phrase,"BAN")
             sent_message = bot.send_message(chat_id, ban_message)
             notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы\nСловосочетание:\n'{phrase}'\nСообщение пользователя:\n'{message_text}'"
             log_and_admin_message(notification_message)
@@ -424,7 +424,7 @@ def handle_text_messages(message, message_text=None):
             if found:
                 warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержало запрещенное в этом чате слово {phrase}, попробуйте написать иначе."
                 delete_user_message(chat_id, message_id)
-                record_ban_event(user_id, user_name, message_text, "WARNING")
+                record_ban_event(user_id, user_name, message_text, phrase,"WARNING")
                 sent_message = bot.send_message(chat_id, warning_message)
                 notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено за отправку сообщения с матом:\nСлово:\n{phrase}\nСообщение пользователя:\n'{message_text}'"
                 log_and_admin_message(notification_message)
