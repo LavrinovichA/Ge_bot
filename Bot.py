@@ -142,7 +142,20 @@ def preprocess_text(text):
     text = re.sub(r'[^\w\s]', '', text)
     # Заменяем множественные пробелы на одиночные
     text = re.sub(r'\s+', ' ', text)
-    return text
+
+    # Создаем словарь для замены латинских букв на кириллические
+    replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
+                        'n': 'п', 'm': 'т', 't': 'т', 'b': 'б'}
+
+    # Проходим по каждому символу текста
+    result = ''
+    for char in text:
+        # Если символ латинский и есть его кириллический аналог, заменяем его
+        if char.lower() in replacement_dict:
+            result += replacement_dict[char.lower()]
+        else:
+            result += char
+    return result
 
 # Функция подсчета сообщений в бане
 def count_message_occurrences(text):
