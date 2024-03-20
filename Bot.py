@@ -147,15 +147,27 @@ def preprocess_text(text):
     replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
                         'n': 'п', 'm': 'т', 't': 'т', 'b': 'б'}
 
-    # Проходим по каждому символу текста
-    result = ''
-    for char in text:
-        # Если символ латинский и есть его кириллический аналог, заменяем его
-        if char.lower() in replacement_dict:
-            result += replacement_dict[char.lower()]
+    # Проходим по каждому слову в тексте
+    words = text.split()
+    result = []
+    for word in words:
+        # Проверяем, являются ли все символы в слове латинскими буквами
+        if all(char.lower() in replacement_dict or not char.isalpha() for char in word):
+            # Если да, то оставляем слово без изменений
+            result.append(word)
         else:
-            result += char
-    return result
+            # Иначе, производим замену символов
+            new_word = ''
+            for char in word:
+                if char.lower() in replacement_dict:
+                    if char.isupper():
+                        new_word += replacement_dict[char.lower()].upper()
+                    else:
+                        new_word += replacement_dict[char.lower()]
+                else:
+                    new_word += char
+            result.append(new_word)
+    return ' '.join(result)
 
 # Функция подсчета сообщений в бане
 def count_message_occurrences(text):
@@ -388,6 +400,7 @@ def handle_text_messages(message, message_text=None):
 
     #Приводим текст в единый формат
     text = preprocess_text(message_text)
+    print(text)
 
     # Проверка на наличие рекламных сообщений
     for phrase in banned_phrases:
