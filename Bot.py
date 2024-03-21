@@ -147,27 +147,19 @@ def preprocess_text(text):
     ###
     # Создаем словарь для замены латинских букв на кириллические
     replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
-                        'n': 'п', 'm': 'т', 't': 'т', 'b': 'б'}
+                        'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё':'е'}
+    translation_table = str.maketrans(replacement_dict)
     # Проходим по каждому слову в тексте
     words = text.split()
     result = []
     for word in words:
         # Проверяем, являются ли все символы в слове латинскими буквами
-        if all(char.lower() in replacement_dict or not char.isalpha() for char in word):
+        if all(char.isalpha() and re.match('[a-z]', char.lower()) for char in word):
             # Если да, то оставляем слово без изменений
             result.append(word)
         else:
             # Иначе, производим замену символов
-            new_word = ''
-            for char in word:
-                if char.lower() in replacement_dict:
-                    if char.isupper():
-                        new_word += replacement_dict[char.lower()].upper()
-                    else:
-                        new_word += replacement_dict[char.lower()]
-                else:
-                    new_word += char
-            result.append(new_word)
+            result.append(word.translate(translation_table))
     return ' '.join(result)
 
 # Функция подсчета сообщений в бане
