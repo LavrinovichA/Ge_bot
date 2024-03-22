@@ -25,6 +25,11 @@ MUTE_DURATION = 1209600
 logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INFO,
                     format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
 
+# Создаем словарь для замены латинских букв на кириллические
+replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
+                    'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё': 'е'}
+translation_table = str.maketrans(replacement_dict)
+
 # Функция для чтения токена и id чата из файла
 def read_token_and_chat_id():
     try:
@@ -144,11 +149,6 @@ def preprocess_text(text):
     # Заменяем множественные пробелы на одиночные
     text = re.sub(r'\s+', ' ', text)
 
-    ###
-    # Создаем словарь для замены латинских букв на кириллические
-    replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
-                        'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё':'е'}
-    translation_table = str.maketrans(replacement_dict)
     # Проходим по каждому слову в тексте
     words = text.split()
     result = []
@@ -190,6 +190,12 @@ def log_and_admin_message(notification_message):
             logging.info(f'Отправлено {admin_id}')
         except telebot.apihelper.ApiException as e:
             logging.error(f"Не удалось отправить {admin_id}: {e}")
+
+# Логирование ошибок
+def log_error(e):
+    print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
+    logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
+    time.sleep(10)  # Пауза перед повторной попыткой
 
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
@@ -469,7 +475,11 @@ while True:
         bot.polling(timeout=320, none_stop=True)
         time.sleep(5)  # Задержка перед чтением администраторов
 
+# Обработка ошибок
+    except telebot.apihelper.ApiTelegramException as e:
+        if e.result_json['error_code'] == 502:
+            log_error(e)
+        else:
+            log_error(e)
     except Exception as e:
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
-        logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
-        time.sleep(10)  # Пауза перед повторной попыткой
+        log_error(e)
