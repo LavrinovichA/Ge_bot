@@ -1,5 +1,3 @@
-import logging
-
 from imports import *
 
 # Пути к файлам JSON
