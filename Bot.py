@@ -373,15 +373,15 @@ def handle_photo(message):
     if message.caption:
         message_text = message.caption
 
-#        # Получаем информацию о картинке
+#    if message.photo:
 #        file_id = message.photo[-1].file_id
 #        file_info = bot.get_file(file_id)
-#        # Загружаем картинку в память
 #        image_stream = BytesIO()
 #        file_info.download(out=image_stream)
 #        image_stream.seek(0)
 #        # Распознаем текст на картинке
 #        extracted_text = recognize_text(image_stream)
+#        
 #        message_text.append(f"Текст с картинки: {extracted_text}")
 
         handle_text_messages(message, message_text)
