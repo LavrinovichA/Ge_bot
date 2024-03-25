@@ -20,6 +20,7 @@ message_occurrences_cache = {}
 #Если используем мут в секундах
 MUTE_DURATION = 1209600
 
+#Логирование
 logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INFO,
                     format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
 
@@ -195,6 +196,16 @@ def log_error(e):
     logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
     time.sleep(10)  # Пауза перед повторной попыткой
 
+#Распознаём текст с картинки
+def recognize_text(image_stream):
+    # Открываем изображение с помощью PIL
+    image = Image.open(image_stream)
+    # Используем pytesseract для распознавания текста
+    extracted_text = pytesseract.image_to_string(image)
+
+    return extracted_text
+
+
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
 
@@ -361,6 +372,18 @@ def handle_photo(message):
     # Обработка подписи к фотографии, если есть
     if message.caption:
         message_text = message.caption
+
+#        # Получаем информацию о картинке
+#        file_id = message.photo[-1].file_id
+#        file_info = bot.get_file(file_id)
+#        # Загружаем картинку в память
+#        image_stream = BytesIO()
+#        file_info.download(out=image_stream)
+#        image_stream.seek(0)
+#        # Распознаем текст на картинке
+#        extracted_text = recognize_text(image_stream)
+#        message_text.append(f"Текст с картинки: {extracted_text}")
+
         handle_text_messages(message, message_text)
 
 #Обработка всех текстовых сообщений
@@ -387,7 +410,7 @@ def handle_text_messages(message, message_text=None):
     if count_message_occurrences(message_text):
         delete_user_message(chat_id, message_id)
         notification_message = f"Пользователь {user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nя его замутил на 14 дней"
-        record_ban_event(user_id, user_name, message_text,'',"BAN")
+        record_ban_event(user_id, user_name, message_text,'повтор сообщения',"BAN")
         log_and_admin_message(notification_message)
         #bot.kick_chat_member(CHAT_ID, user_id)
         #Заменить 'MUTE_DURATION' на длительность мута в секундах
@@ -459,7 +482,7 @@ while True:
         bot_start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         chat_title = bot.get_chat(CHAT_ID).title
         print(f"Бот запущен в {bot_start_time} в чате {chat_title}")
-        logging.info(f"Бот запущен в {bot_start_time} в чате ID{CHAT_ID}, {chat_title}")
+        logging.info(f"Бот запущен {bot_start_time} в чате ID{CHAT_ID}, {chat_title}")
         # Список администраторов для печати
         admins_list = []
         for admin_id in admin_ids:
@@ -475,7 +498,7 @@ while True:
 
 # Обработка ошибок
     except telebot.apihelper.ApiTelegramException as e:
-        if e.result_json['error_code'] == 502:
+        if 100 <= e.result_json['error_code'] < 600:
             log_error(e)
         else:
             log_error(e)
