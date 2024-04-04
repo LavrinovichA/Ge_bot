@@ -407,8 +407,8 @@ def handle_text_messages(message, message_text=None):
 
     # Проверка, является ли отправитель администратором
     # Не выполняем никаких действий, если отправитель администратор
-    #if str(user_id) in admin_ids[chat_id]:
-    #    return
+    if str(user_id) in admin_ids[chat_id]:
+        return
 
     #Если нет текста не выполняем дальше
     if message_text is None:
