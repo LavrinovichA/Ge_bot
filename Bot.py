@@ -322,17 +322,19 @@ def process_dates(message):
 
     file_path = BANSTAT_FILE
     file_bot_path = BOT_STAT_FILE
-    count_ban, count_warning, count_bot = count_events(file_path, file_bot_path, start_date, end_date)
+    count_ban, count_warning, count_bot, count_mut = count_events(file_path, file_bot_path, start_date, end_date)
     bot.send_message(chat_id, f"За период с {start_date} по {end_date}:\n"
                                       f"Рекламных {count_ban} сообщений,\n"
                                       f"Вынесено {count_warning} предупреждений,\n"
-                                      f"Удалено {count_bot} ботов.")
+                                      f"Заблокировано {count_mut},\n"
+                                      f"Удалено {count_bot} ботов")
 
 # Функция для подсчета событий в указанном диапазоне дат
 def count_events(file_path, file_bot_path, start_date, end_date):
     count_ban = 0
     count_warning = 0
     count_bot = 0
+    count_mut = 0
     start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
     end_datetime = datetime.strptime(end_date, '%Y-%m-%d') if end_date else start_datetime
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -344,13 +346,15 @@ def count_events(file_path, file_bot_path, start_date, end_date):
                     count_ban += 1
                 elif event_data['event_type'] == 'WARNING':
                     count_warning += 1
+                elif event_data['event_type'] == 'MUT':
+                    count_mut += 1
     with open(file_bot_path, 'r', encoding='utf-8') as file:
         for line in file:
             event_data = json.loads(line)
             timestamp = datetime.strptime(event_data['timestamp'][:10], '%Y-%m-%d')
             if start_datetime <= timestamp <= end_datetime:
                 count_bot += 1
-    return count_ban, count_warning, count_bot
+    return count_ban, count_warning, count_bot, count_mut
 
 # Обработчик для сообщений после выбора кнопки "Статус"
 @bot.message_handler(func=lambda message: message.text.strip() == "Статус")
@@ -405,7 +409,7 @@ def handle_text_messages(message, message_text=None):
     if count_message_occurrences(message_text):
         bot.delete_message(chat_id, message_id)
         notification_message = f"Пользователь {user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nя его замутил на 14 дней"
-        record_ban_event(user_id, user_name, message_text,'повтор сообщения',"BAN")
+        record_ban_event(user_id, user_name, message_text,'повтор сообщения',"MUT")
         log_and_admin_message(notification_message)
         #bot.kick_chat_member(CHAT_ID, user_id)
         #Заменить 'MUTE_DURATION' на длительность мута в секундах
