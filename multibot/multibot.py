@@ -260,6 +260,7 @@ def handle_commands(message):
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
 def add_to_ban_phrases(message):
     user_id = message.from_user.id
+    chat_id = message.chat.id
 
     if str(user_id) in admin_ids[chat_id]:
         bot.send_message(user_id, "Введите текст для добавления в BAN:")
@@ -286,6 +287,7 @@ def process_ban_phrase(message, user_id):
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в WARNING")
 def add_to_warning_phrases(message):
     user_id = message.from_user.id
+    chat_id = message.chat.id
 
     if str(user_id) in admin_ids[chat_id]:
         bot.send_message(user_id, "Введите текст для добавления в WARNING:")
@@ -312,6 +314,8 @@ def process_warning_phrase(message, user_id):
 @bot.message_handler(func=lambda message: message.text.strip() == "Статистика")
 def handle_statistics(message):
     user_id = message.from_user.id
+    chat_id = message.chat.id
+  
     if str(user_id) in admin_ids[chat_id]:
         bot.send_message(user_id,"Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
         bot.delete_message(message.chat.id, message.message_id)
@@ -365,6 +369,7 @@ def count_events(file_path, file_bot_path, start_date, end_date):
 @bot.message_handler(func=lambda message: message.text.strip() == "Статус")
 def status_command(message):
     user_id = message.from_user.id
+    chat_id = message.chat.id
 
     if str(user_id) in admin_ids[chat_id]:
         # Отправляем сообщение со статусом и временем запуска бота
