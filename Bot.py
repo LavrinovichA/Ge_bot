@@ -26,7 +26,7 @@ logging.basicConfig(filename='Telebot.json', encoding='utf-8', level=logging.INF
 
 # Создаем словарь для замены латинских букв на кириллические
 replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
-                    'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё': 'е'}
+                    'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё': 'е', '0':'о', '6':'б'}
 translation_table = str.maketrans(replacement_dict)
 
 # Функция для чтения токена и id чата из файла
@@ -69,10 +69,6 @@ def read_data_from_file(filename):
         print(f"Файл '{filename}' не найден.")
         data = []
     return data
-
-# Функция для удаления сообщения пользователя
-def delete_user_message(chat_id, message_id):
-    bot.delete_message(chat_id, message_id)
 
 # Функция для записи события бана в файл
 def record_ban_event(user_id, user_name, message_text, phrase, event_type):
@@ -372,7 +368,6 @@ def handle_photo(message):
     # Обработка подписи к фотографии, если есть
     if message.caption:
         message_text = message.caption
-
 #    if message.photo:
 #        file_id = message.photo[-1].file_id
 #        file_info = bot.get_file(file_id)
@@ -381,8 +376,8 @@ def handle_photo(message):
 #        image_stream.seek(0)
 #        # Распознаем текст на картинке
 #        extracted_text = recognize_text(image_stream)
-#        
-#        message_text.append(f"Текст с картинки: {extracted_text}")
+#
+#        message_text.append(f"Текст с картинки: '{extracted_text}'")
 
         handle_text_messages(message, message_text)
 
@@ -408,7 +403,7 @@ def handle_text_messages(message, message_text=None):
 
     # Проверка на повторяющиеся сообщения
     if count_message_occurrences(message_text):
-        delete_user_message(chat_id, message_id)
+        bot.delete_message(chat_id, message_id)
         notification_message = f"Пользователь {user_name} (ID: {user_id}) отправил повторяющееся сообщение:\n'{message_text}'\nя его замутил на 14 дней"
         record_ban_event(user_id, user_name, message_text,'повтор сообщения',"BAN")
         log_and_admin_message(notification_message)
@@ -427,7 +422,7 @@ def handle_text_messages(message, message_text=None):
         found = all(word.lower() in text.lower() for word in words)
         if found:
             ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
-            delete_user_message(chat_id, message_id)
+            bot.delete_message(chat_id, message_id)
             record_ban_event(user_id, user_name, message_text, phrase,"BAN")
             sent_message = bot.send_message(chat_id, ban_message)
             notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено за отправку рекламы\nСловосочетание:\n'{phrase}'\nСообщение пользователя:\n'{message_text}'"
@@ -442,7 +437,7 @@ def handle_text_messages(message, message_text=None):
             found = any(len(word) == len(word.lower()) and word.lower() in text.split() for word in words)
             if found:
                 warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержало запрещенное в этом чате слово {phrase}, попробуйте написать иначе."
-                delete_user_message(chat_id, message_id)
+                bot.delete_message(chat_id, message_id)
                 record_ban_event(user_id, user_name, message_text, phrase,"WARNING")
                 sent_message = bot.send_message(chat_id, warning_message)
                 notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено за отправку сообщения с матом:\nСлово:\n{phrase}\nСообщение пользователя:\n'{message_text}'"
@@ -498,9 +493,6 @@ while True:
 
 # Обработка ошибок
     except telebot.apihelper.ApiTelegramException as e:
-        if 100 <= e.result_json['error_code'] < 600:
-            log_error(e)
-        else:
-            log_error(e)
+        log_error(e)
     except Exception as e:
         log_error(e)
