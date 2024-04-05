@@ -206,8 +206,10 @@ def recognize_text(image_stream):
 def check_suspicious_text(text, banned_phrases_new):
     found_words = [word.lower() for word in banned_phrases_new if word.lower() in text.lower()]
     found_count = len(found_words)
+    total_words = len(text.split())  # Общее количество слов в тексте
+    suspicious_percentage = (found_count / total_words) * 100 if total_words > 0 else 0
     suspicious = found_count > 3
-    return suspicious, found_count, found_words
+    return suspicious, found_count, found_words, suspicious_percentage
 
 # Получение списка администраторов чата
 admin_ids = get_chat_admins(CHAT_ID)
@@ -419,13 +421,13 @@ def handle_text_messages(message, message_text=None):
 
     #тестим новый способ проверки
     logging.info(message_text)
-    suspicious, found_count, found_words = check_suspicious_text(preprocess_text(message_text), banned_phrases_new)
+    suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(preprocess_text(message_text), banned_phrases_new)
     if suspicious:
-        logging.info("Текст подозрителен. Количество совпавших слов:", found_count)
-        logging.info("Совпавшие слова:", ', '.join(found_words))
+        logging.info(f"Текст подозрителен. Количество совпавших слов: {found_count}, {suspicious_percentage}")
+        logging.info(f"Совпавшие слова: {', '.join(found_words)}")
     else:
-        logging.info("Текст не подозрителен. Количество совпавших слов:", found_count)
-        logging.info("Совпавшие слова:", ', '.join(found_words))
+        logging.info(f"Текст не подозрителен. Количество совпавших слов: {found_count}, {suspicious_percentage}")
+        logging.info(f"Совпавшие слова: {', '.join(found_words)}")
 
 
     # Проверка на повторяющиеся сообщения
