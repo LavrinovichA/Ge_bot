@@ -285,20 +285,22 @@ def add_to_ban_phrases(message):
 # Функция для обработки текста, который нужно добавить в BAN
 def process_ban_phrase(message, user_id):
     global banned_phrases
-    new_phrase = message.text.strip()
+    notification_massege = []
     user_name = message.from_user.first_name
+    lines = message.text.splitlines()
+    for line in lines:
+        new_phrase = preprocess_text(line)
 
     # Добавить новую фразу в файл Banned_phrases.json
-    write_data_to_file(BANNED_PHRASES_FILE, new_phrase)
+        write_data_to_file(BANNED_PHRASES_FILE, new_phrase)
+        logging.info(f'{user_id} {user_name} добавил фарзу "{new_phrase}" в BAN')
+        notification_massege.append(new_phrase)
 
     # Отправить подтверждение администратору
-    bot.send_message(user_id, f"Фраза\n'{new_phrase}'\nуспешно добавлена в BAN.")
-    logging.info(f'{user_id} {user_name} добавил фарзу "{new_phrase}" в BAN')
+    bot.send_message(user_id, f"Фраза\n{notification_massege}\nуспешно добавлена в BAN.")
     banned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
-
     return banned_phrases
-
-
+  
 # Обработчик для сообщений после выбора кнопки "Добавить данные в WARNING"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в WARNING")
 def add_to_warning_phrases(message):
