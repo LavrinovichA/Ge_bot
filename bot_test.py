@@ -207,7 +207,7 @@ def check_suspicious_text(text, banned_phrases_new):
     found_words = [word.lower() for word in banned_phrases_new if word.lower() in text.lower()]
     found_count = len(found_words)
     total_words = len(text.split())  # Общее количество слов в тексте
-    suspicious_percentage = (found_count / total_words) * 100 if total_words > 0 else 0
+    suspicious_percentage = round((found_count / total_words) * 100, 2) if total_words > 0 else 0
     suspicious = suspicious_percentage > 30
     return suspicious, found_count, found_words, suspicious_percentage
 
