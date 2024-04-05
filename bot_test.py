@@ -208,7 +208,7 @@ def check_suspicious_text(text, banned_phrases_new):
     found_count = len(found_words)
     total_words = len(text.split())  # Общее количество слов в тексте
     suspicious_percentage = (found_count / total_words) * 100 if total_words > 0 else 0
-    suspicious = found_count > 3
+    suspicious = suspicious_percentage > 30
     return suspicious, found_count, found_words, suspicious_percentage
 
 # Получение списка администраторов чата
@@ -423,10 +423,10 @@ def handle_text_messages(message, message_text=None):
     logging.info(message_text)
     suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(preprocess_text(message_text), banned_phrases_new)
     if suspicious:
-        logging.info(f"Текст подозрителен. Количество совпавших слов: {found_count}, {suspicious_percentage}")
+        logging.info(f"Текст подозрителен. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
         logging.info(f"Совпавшие слова: {', '.join(found_words)}")
     else:
-        logging.info(f"Текст не подозрителен. Количество совпавших слов: {found_count}, {suspicious_percentage}")
+        logging.info(f"Текст не подозрителен. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
         logging.info(f"Совпавшие слова: {', '.join(found_words)}")
 
 
