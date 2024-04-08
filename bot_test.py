@@ -68,6 +68,7 @@ def read_data_from_file(filename):
             data = [line.strip().lower() for line in file]
     except FileNotFoundError:
         print(f"Файл '{filename}' не найден.")
+        logging.error(f"Файл '{filename}' не найден.")
         data = []
     return data
 
@@ -87,6 +88,7 @@ def record_ban_event(user_id, user_name, message_text, phrase, event_type):
             file.write("\n")
         except Exception as e:
             print(f"Ошибка при записи данных в файл: {e}")
+            logging.error(f"Ошибка при записи данных в файл: {e}")
     return BANSTAT_FILE
 
 # Функция для записи попытки добавления бота
@@ -104,6 +106,7 @@ def record_bot_add_event(user_id, user_name, bot_id, bot_name):
             file.write("\n")
         except Exception as e:
             print(f"Ошибка при записи данных в файл: {e}")
+            logging.error(f"Ошибка при записи данных в файл: {e}")
 
 # Функция для очистки файла
 def clear_file(filename):
@@ -136,7 +139,10 @@ def get_chat_admins(chat_id):
 # Функция для удаления сообщения через 5 секунд
 def delete_message_after_delay(chat_id, message_id, delay):
     time.sleep(delay)
-    bot.delete_message(chat_id, message_id)
+    try:
+        bot.delete_message(chat_id, message_id)
+    except Exception as e:
+        print("Не получилось удалить сообщение", e)
 
 # Функция для очистки текста
 def preprocess_text(text):
@@ -255,7 +261,10 @@ def handle_commands(message):
                 else:
                     bot.send_message(chat_id, f"Произошла ошибка: {e}")
     if str(message_text) == "/start":
-        bot.delete_message(chat_id, message.message_id)
+        try:
+            bot.delete_message(chat_id, message.message_id)
+        except Exception as e:
+            log_error(e)
 
 # Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
@@ -420,13 +429,13 @@ def handle_text_messages(message, message_text=None):
             return
 
     #тестим новый способ проверки
-    logging.info(message_text)
+    logging.info(f"{user_name}, {message_text}")
     suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(preprocess_text(message_text), banned_phrases_new)
     if suspicious:
-        logging.info(f"Текст подозрителен. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
+        logging.info(f"!!! НЕ Ок. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
         logging.info(f"Совпавшие слова: {', '.join(found_words)}")
     else:
-        logging.info(f"Текст не подозрителен. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
+        logging.info(f"ОК. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
         logging.info(f"Совпавшие слова: {', '.join(found_words)}")
 
 
