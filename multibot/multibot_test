@@ -40,16 +40,15 @@ def read_token_and_chat_id():
         if token is not None and chat_ids is not None:  # Проверяем, что данные были успешно считаны из файла
             return token, chat_ids, owner_id
         else:
-            print(f"Ошибка: Не удалось получить токен и/или ID чатов из файла '{TOKEN_FILE}'.")
-            logging.error(f"Ошибка: Не удалось получить токен и/или ID чатов из файла '{TOKEN_FILE}'.")
+            log_error(f"Ошибка: Не удалось получить токен и/или ID чатов из файла '{TOKEN_FILE}'.")
             return None, None
+
     except FileNotFoundError:
-        print(f"Файл '{TOKEN_FILE}' не найден.")
-        logging.error(f"Файл '{TOKEN_FILE}' не найден.")
+        log_error(f"Файл '{TOKEN_FILE}' не найден.")
         return None, None
+
     except json.JSONDecodeError:
-        print(f"Ошибка при чтении файла '{TOKEN_FILE}': неверный формат JSON.")
-        logging.error(f"Ошибка при чтении файла '{TOKEN_FILE}': неверный формат JSON.")
+        log_error(f"Ошибка при чтении файла '{TOKEN_FILE}': неверный формат JSON.")
         return None, None
 
 #Функция для записи данных в файл с указанием кодировки
@@ -58,8 +57,7 @@ def write_data_to_file(filename, data):
         try:
             file.write(str(data) + "\n")
         except Exception as e:
-            print(f"Ошибка при записи данных в файл: {e}")
-            logging.error(f"Ошибка при записи данных в файл: {e}")
+            log_error(f"Ошибка при записи данных в файл: {e}")
 
 #Функция для чтения данных из файла
 def read_data_from_file(filename):
@@ -67,8 +65,7 @@ def read_data_from_file(filename):
         with open(filename, "r", encoding="utf-8") as file:
             data = [line.strip().lower() for line in file]
     except FileNotFoundError:
-        print(f"Файл '{filename}' не найден.")
-        logging.error(f"Файл '{filename}' не найден.")
+        log_error(f"Файл '{filename}' не найден.")
         data = []
     return data
 
@@ -88,8 +85,7 @@ def record_ban_event(chat_name, user_id, user_name, message_text, phrase, event_
             json.dump(entry, file, ensure_ascii=False)
             file.write("\n")
         except Exception as e:
-            print(f"Ошибка при записи данных в файл: {e}")
-            logging.error(f"Ошибка при записи данных в файл: {e}")
+            log_error(f"Ошибка при записи данных в файл: {e}")
     return BANSTAT_FILE
 
 #Функция для записи попытки добавления бота
@@ -107,8 +103,7 @@ def record_bot_add_event(chat_name, user_id, user_name, bot_id, bot_name):
             json.dump(entry, file, ensure_ascii=False)
             file.write("\n")
         except Exception as e:
-            print(f"Ошибка при записи данных в файл: {e}")
-            logging.error(f"Ошибка при записи данных в файл: {e}")
+            log_error(f"Ошибка при записи данных в файл: {e}")
 
 #Чтение токена и ID чатов из файла
 TOKEN, CHAT_IDS, OWNER_ID = read_token_and_chat_id()
@@ -192,13 +187,13 @@ def log_and_admin_message(notification_message, chat_id):
                 bot.send_message(admin_id, notification_message)
                 logging.info(f'Отправлено {admin_id}')
             except telebot.apihelper.ApiException as e:
-                logging.error(f"Не удалось отправить {admin_id} {e}")
+                log_error(f"Не удалось отправить {admin_id} {e}")
     else:
         try:
             bot.send_message(admin_id, notification_message)
             logging.info(f'Отправлено {admin_id}')
         except telebot.apihelper.ApiException as e:
-            logging.error(f"Не удалось отправить {admin_id} {e}")
+            log_error(f"Не удалось отправить {admin_id} {e}")
 
         for admin_id in admin_ids[chat_id]:
             if str(admin_id) == str(BOT_ID):
@@ -207,8 +202,7 @@ def log_and_admin_message(notification_message, chat_id):
                 bot.send_message(admin_id, notification_message)
                 logging.info(f'Отправлено {admin_id}')
             except telebot.apihelper.ApiException as e:
-                logging.error(f"Не удалось отправить {admin_id} {e}")
-
+                log_error(f"Не удалось отправить {admin_id} {e}")
 
 #Логирование ошибок
 def log_error(e):
@@ -472,7 +466,7 @@ def handle_text_messages(message, message_text=None):
             bot.restrict_chat_member(chat_id, user_id, until_date=time.time() + MUTE_DURATION, can_send_messages=False)
             logging.info(f"Пользователь {user_name} ID: {user_id} в чате '{chat_title}', заблокирован на 14 дней")
         except telebot.apihelper.ApiException as e:
-            logging.error(f"Ошибка при попытке заблокировать пользователя {user_id} в чате '{chat_title}': {e}")
+            log_error(f"Ошибка при попытке заблокировать пользователя {user_id} в чате '{chat_title}': {e}")
         return
 
     #Приводим текст в единый формат
@@ -533,8 +527,7 @@ def delete(message):
         bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
         # Обработка ошибок
-        print(f"Произошла ошибка: {e}")
-        logging.error(f"Произошла ошибка: {e}")
+        log_error(f"Произошла ошибка при удалении информационного сообщения: {e}")
 
 #Запуск бота
 while True:
