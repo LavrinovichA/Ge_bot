@@ -183,7 +183,7 @@ def count_message_occurrences(text):
 
 #Функция логирования и отправки сообщения админам
 def log_and_admin_message(notification_message, chat_id):
-    logging.info(notification_message)
+    logging.info(notification_message.replace('\n', ' '))
     if OWNER_ID in admin_ids[chat_id]:
         for admin_id in admin_ids[chat_id]:
             if str(admin_id) == str(BOT_ID):
@@ -250,7 +250,9 @@ admin_ids = get_chat_admins(CHAT_IDS)
 def handle_commands(message):
     user_id = message.from_user.id
     chat_id = message.chat.id
+    user_name = message.from_user.first_name
     message_text = message.text.strip()
+    logging.info(f'{user_name} в чате {chat_id} написал /start')
 
 #Проверка, что команда отправлена в личном сообщении и отправитель является администратором
     if str(user_id) in admin_ids[chat_id]:
@@ -269,11 +271,14 @@ def handle_commands(message):
                     bot.send_message(chat_id, "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.")
                 else:
                     bot.send_message(chat_id, f"Произошла ошибка: {e}")
+    else:
+        bot.delete_message(chat_id, message.message_id)
+
     if str(message_text) == "/start":
         try:
             bot.delete_message(chat_id, message.message_id)
         except Exception as e:
-            log_error(e)
+            log_error(f'Ошибка в обработке /start {e}')
 
 #Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
@@ -439,7 +444,7 @@ def handle_text_messages(message, message_text=None):
             return
 
     #Тестим новый способ проверки
-    logging.info(f"{user_name}, {message_text}")
+    logging.info(f"({user_id}; {user_name}), {message_text.replace('\n', ' ')}")
     suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(preprocess_text(message_text), banned_phrases_new)
     if suspicious:
         logging.info(f"!!! НЕ Ок. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
@@ -448,11 +453,17 @@ def handle_text_messages(message, message_text=None):
         logging.info(f"ОК. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
         logging.info(f"Совпавшие слова: {', '.join(found_words)}")
 
+    #Попытка отправить команду
+    if message_text.startswith('/') and " " not in message_text:
+        bot.delete_message(chat_id, message_id)
+        notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал отправить команду:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
+        log_and_admin_message(notification_message, chat_id)
+        return
 
     #Проверка на повторяющиеся сообщения
     if count_message_occurrences(message_text):
         bot.delete_message(chat_id, message_id)
-        notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nотправил повторяющееся сообщение:\n'{message_text}'\nя его замутил на 14 дней"
+        notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nотправил повторяющееся сообщение:\n'{message_text.replace('\n', ' ')}'\nя его замутил на 14 дней"
         record_ban_event(chat_title, user_id, user_name, message_text, 'повтор сообщения', "MUT")
         log_and_admin_message(notification_message, chat_id)
         # bot.kick_chat_member(CHAT_ID, user_id)
@@ -476,7 +487,7 @@ def handle_text_messages(message, message_text=None):
             bot.delete_message(chat_id, message_id)
             record_ban_event(chat_title, user_id, user_name, message_text, phrase, "BAN")
             sent_message = bot.send_message(chat_id, ban_message)
-            notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено из чата '{chat_title}' за отправку рекламы\nСловосочетание:\n'{phrase}'\nСообщение пользователя:\n'{message_text}'"
+            notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено из чата '{chat_title}' за отправку рекламы\nСловосочетание:\n'{phrase}'\nСообщение пользователя:\n'{message_text.replace('\n', ' ')}'"
             log_and_admin_message(notification_message, chat_id)
             threading.Thread(target=delete_message_after_delay,
                              args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
@@ -492,7 +503,7 @@ def handle_text_messages(message, message_text=None):
                 bot.delete_message(chat_id, message_id)
                 record_ban_event(chat_title, user_id, user_name, message_text, phrase, "WARNING")
                 sent_message = bot.send_message(chat_id, warning_message)
-                notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено из чата '{chat_title}' за отправку сообщения с матом:\nСлово:\n{phrase}\nСообщение пользователя:\n'{message_text}'"
+                notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено из чата '{chat_title}' за отправку сообщения с матом:\nСлово:\n{phrase}\nСообщение пользователя:\n'{message_text.replace('\n', ' ')}'"
                 log_and_admin_message(notification_message, chat_id)
                 threading.Thread(target=delete_message_after_delay,
                                  args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
@@ -551,6 +562,6 @@ while True:
 
 #Обработка ошибок
     except telebot.apihelper.ApiTelegramException as e:
-        log_error(e)
+        log_error(f'Ошибка после запуска {e}')
     except Exception as e:
-        log_error(e)
+        log_error(f'Ошибка после запуска {e}')
