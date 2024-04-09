@@ -41,7 +41,8 @@ def read_token_and_chat_id():
             token = data.get("token")
             chat_ids = data.get("chat_id")
             owner_id = data.get("owner_id")
-        if token is not None and chat_ids is not None:  # Проверяем, что данные были успешно считаны из файла
+        #Проверяем, что данные были успешно считаны из файла
+        if token is not None and chat_ids is not None:
             return token, chat_ids, owner_id
         else:
             log_error(f"Ошибка: Не удалось получить токен и/или ID чатов из файла '{TOKEN_FILE}'.")
@@ -145,28 +146,28 @@ def delete_message_after_delay(chat_id, message_id, delay):
 
 #Функция для очистки текста
 def preprocess_text(text):
-    # Удаляем все знаки препинания, спец символы и смайлики
+    #Удаляем все знаки препинания, спец символы и смайлики
     text = re.sub(r'[^\w\s]', '', text)
-    # Заменяем множественные пробелы на одиночные
+    #Заменяем множественные пробелы на одиночные
     text = re.sub(r'\s+', ' ', text)
 
-    # Проходим по каждому слову в тексте
+    #Проходим по каждому слову в тексте
     words = text.split()
     result = []
     for word in words:
-        # Проверяем, являются ли все символы в слове латинскими буквами
+        #Проверяем, являются ли все символы в слове латинскими буквами
         if all(char.isalpha() and re.match('[a-z]', char.lower()) for char in word):
-            # Если да, то оставляем слово без изменений
+            #Если да, то оставляем слово без изменений
             result.append(word)
         else:
-            # Иначе, производим замену символов
+            #Иначе, производим замену символов
             result.append(word.translate(translation_table))
     return ' '.join(result)
 
 #Функция подсчета сообщений в бане
 def count_message_occurrences(text):
     count = 0
-    # Проверяем, есть ли значение в кэше для данного сообщения
+    #Проверяем, есть ли значение в кэше для данного сообщения
     if text in message_occurrences_cache:
         return message_occurrences_cache
 
@@ -176,7 +177,7 @@ def count_message_occurrences(text):
             if entry.get("message_text") == text:
                 count += 1
             if count >= message_count:
-                # Сохраняем результат в кэше
+                #Сохраняем результат в кэше
                 message_occurrences_cache[text] = count
                 return message_occurrences_cache
 
@@ -212,13 +213,14 @@ def log_and_admin_message(notification_message, chat_id):
 def log_error(e):
     print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
     logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Ошибка: {e}")
-    time.sleep(10)  # Пауза перед повторной попыткой
+    #Пауза перед повторной попыткой
+    time.sleep(10)
 
 #Распознаём текст с картинки
 def recognize_text(image_stream):
-    # Открываем изображение с помощью PIL
+    #Открываем изображение с помощью PIL
     image = Image.open(image_stream)
-    # Используем pytesseract для распознавания текста
+    #Используем pytesseract для распознавания текста
     extracted_text = pytesseract.image_to_string(image)
 
     return extracted_text
@@ -227,7 +229,9 @@ def recognize_text(image_stream):
 def check_suspicious_text(text, banned_phrases_new):
     found_words = [word.lower() for word in banned_phrases_new if word.lower() in text.lower()]
     found_count = len(found_words)
-    total_words = len(text.split())  # Общее количество слов в тексте
+    
+    #Общее количество слов в тексте
+    total_words = len(text.split())
     suspicious_percentage = round((found_count / total_words) * 100, 2) if total_words > 0 else 0
     suspicious = suspicious_percentage > 30
     return suspicious, found_count, found_words, suspicious_percentage
@@ -255,13 +259,13 @@ def handle_commands(message):
 #Проверка, что команда отправлена в личном сообщении и отправитель является администратором
     if str(user_id) in admin_ids[chat_id]:
         if str(message_text == "/start"):
-            # Создаем клавиатуру
+            #Создаем клавиатуру
             keyboard = types.ReplyKeyboardMarkup(row_width=2)
             button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика", "Статус"]
             for text in button_texts:
                 button = types.KeyboardButton(text=text)
                 keyboard.add(button)
-            # Отправляем сообщение с клавиатурой в личное сообщение администратору
+            #Отправляем сообщение с клавиатурой в личное сообщение администратору
             try:
                 bot.send_message(user_id, "Выберите действие:", reply_markup=keyboard)
             except ApiTelegramException as e:
@@ -397,14 +401,14 @@ def status_command(message):
     user_id = message.from_user.id
 
     if str(user_id) in admin_ids[chat_id]:
-        # Отправляем сообщение со статусом и временем запуска бота
+        #Отправляем сообщение со статусом и временем запуска бота
         bot.send_message(user_id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
         bot.delete_message(message.chat.id, message.message_id)
 
 #Обработка сообщений с фото
 @bot.message_handler(content_types=['photo', 'audio', 'documents', 'video', 'voice', 'sticker'])
 def handle_photo(message):
-    # Обработка подписи к фотографии, если есть
+    #Обработка подписи к фотографии, если есть
     if message.caption:
         message_text = message.caption
 #    if message.photo:
@@ -415,7 +419,6 @@ def handle_photo(message):
 #        image_stream.seek(0)
 #        # Распознаем текст на картинке
 #        extracted_text = recognize_text(image_stream)
-#
 #        message_text.append(f"Текст с картинки: '{extracted_text}'")
 
         handle_text_messages(message, message_text)
@@ -467,8 +470,7 @@ def handle_text_messages(message, message_text=None):
         notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nотправил повторяющееся сообщение:\n'{message_text.replace('\n', ' ')}'\nя его замутил на 14 дней"
         record_ban_event(chat_title, user_id, user_name, message_text, 'повтор сообщения', "MUT")
         log_and_admin_message(notification_message, chat_id)
-        # bot.kick_chat_member(CHAT_ID, user_id)
-        # Заменить 'MUTE_DURATION' на длительность мута в секундах
+        #bot.kick_chat_member(CHAT_ID, user_id)
         try:
             bot.restrict_chat_member(chat_id, user_id, until_date=time.time() + MUTE_DURATION, can_send_messages=False)
             logging.info(f"Пользователь {user_name} ID: {user_id} в чате '{chat_title}', заблокирован на 14 дней")
@@ -516,9 +518,9 @@ def delete(message):
         if message.content_type == 'new_chat_members':
             for new_chat_member in message.new_chat_members:
                 if new_chat_member.is_bot:
-                    # Попытка выгнать бота из чата
+                    #Попытка выгнать бота из чата
                     bot.kick_chat_member(message.chat.id, new_chat_member.id)
-                    # Получение информации о пользователе, попытка записи события
+                    #Получение информации о пользователе, попытка записи события
                     chat_title = bot.get_chat(chat_id).title
                     user_id = message.from_user.id
                     user_name = message.from_user.first_name + ' ' + message.from_user.last_name
@@ -530,7 +532,7 @@ def delete(message):
         #Попытка удалить сообщение
         bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
-        # Обработка ошибок
+        #Обработка ошибок
         log_error(f"Произошла ошибка при удалении информационного сообщения: {e}")
 
 #Запуск бота
@@ -542,7 +544,7 @@ while True:
             chat_title = bot.get_chat(chat_id).title
             print(f"Бот запущен в {bot_start_time} в чате '{chat_title}'")
             logging.info(f"Бот запущен в {bot_start_time} в чате ID {chat_id}, {chat_title}")
-            # Получение данных администраторов в чате
+            #Получение данных администраторов в чате
             admins_list_details = []
             for admin_id in admins_list:
                 try:
@@ -555,7 +557,8 @@ while True:
             print(f'Администраторы {admins_list_details}\n ')
             logging.info(f'Администраторы {admins_list_details}')
         bot.polling(timeout=320, none_stop=True)
-        time.sleep(5)  # Задержка перед повторным опросом
+        #Задержка перед повторным опросом
+        time.sleep(5)  
 
 #Обработка ошибок
     except telebot.apihelper.ApiTelegramException as e:
