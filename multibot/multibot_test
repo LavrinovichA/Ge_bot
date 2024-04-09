@@ -229,7 +229,7 @@ def recognize_text(image_stream):
 def check_suspicious_text(text, banned_phrases_new):
     found_words = [word.lower() for word in banned_phrases_new if word.lower() in text.lower()]
     found_count = len(found_words)
-    
+
     #Общее количество слов в тексте
     total_words = len(text.split())
     suspicious_percentage = round((found_count / total_words) * 100, 2) if total_words > 0 else 0
@@ -267,12 +267,12 @@ def handle_commands(message):
                 keyboard.add(button)
             #Отправляем сообщение с клавиатурой в личное сообщение администратору
             try:
-                bot.send_message(user_id, "Выберите действие:", reply_markup=keyboard)
+                bot.send_message(user_id, "Выберите действие:", reply_markup=keyboard, disable_notification = True)
             except ApiTelegramException as e:
                 if e.error_code == 403:
-                    bot.send_message(chat_id, "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.")
+                    bot.send_message(chat_id, "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.", disable_notification = True)
                 else:
-                    bot.send_message(chat_id, f"Произошла ошибка: {e}")
+                    bot.send_message(chat_id, f"Произошла ошибка: {e}", disable_notification = True)
     else:
         bot.delete_message(chat_id, message.message_id)
 
@@ -288,7 +288,7 @@ def add_to_ban_phrases(message):
     user_id = message.from_user.id
 
     if str(user_id) in admin_ids[chat_id]:
-        bot.send_message(user_id, "Введите текст для добавления в BAN:")
+        bot.send_message(user_id, "Введите текст для добавления в BAN:", disable_notification = True)
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_ban_phrase, user_id)
 
@@ -308,7 +308,7 @@ def process_ban_phrase(message, user_id):
         notification_massege.append(new_phrase)
 
     #Отправить подтверждение администратору
-    bot.send_message(user_id, f"Фраза\n{notification_massege}\nуспешно добавлена в BAN.")
+    bot.send_message(user_id, f"Фраза\n{notification_massege}\nуспешно добавлена в BAN.", disable_notification = True)
     banned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
     return banned_phrases
 
@@ -318,7 +318,7 @@ def add_to_warning_phrases(message):
     user_id = message.from_user.id
 
     if str(user_id) in admin_ids[chat_id]:
-        bot.send_message(user_id, "Введите текст для добавления в WARNING:")
+        bot.send_message(user_id, "Введите текст для добавления в WARNING:", disable_notification = True)
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_warning_phrase, user_id)
 
@@ -332,7 +332,7 @@ def process_warning_phrase(message, user_id):
     write_data_to_file(WARNING_PHRASES_FILE, new_phrase)
 
     #Отправить подтверждение администратору
-    bot.send_message(user_id, f"Фраза\n'{new_phrase}'\nуспешно добавлена в WARNING.")
+    bot.send_message(user_id, f"Фраза\n'{new_phrase}'\nуспешно добавлена в WARNING.", disable_notification = True)
     logging.info(f'{user_id} {user_name} добавил фарзу "{new_phrase}" в Warning')
     warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
 
@@ -343,7 +343,7 @@ def process_warning_phrase(message, user_id):
 def handle_statistics(message):
     user_id = message.from_user.id
     if str(user_id) in admin_ids[chat_id]:
-        bot.send_message(user_id,"Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':")
+        bot.send_message(user_id,"Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':", disable_notification = True)
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_dates)
 
@@ -356,7 +356,7 @@ def process_dates(message):
     elif len(date_range) == 2:
         start_date, end_date = date_range
     else:
-        bot.send_message(chat_id, "Неправильный формат ввода. Попробуйте снова.")
+        bot.send_message(chat_id, "Неправильный формат ввода. Попробуйте снова.", disable_notification = True)
         return
 
     file_path = BANSTAT_FILE
@@ -366,7 +366,7 @@ def process_dates(message):
                                       f"Рекламных {count_ban} сообщений,\n"
                                       f"Вынесено {count_warning} предупреждений,\n"
                                       f"Заблокировано {count_mut},\n"
-                                      f"Удалено {count_bot} ботов")
+                                      f"Удалено {count_bot} ботов", disable_notification = True)
 
 #Функция для подсчета событий в указанном диапазоне дат
 def count_events(file_path, file_bot_path, start_date, end_date):
@@ -402,7 +402,7 @@ def status_command(message):
 
     if str(user_id) in admin_ids[chat_id]:
         #Отправляем сообщение со статусом и временем запуска бота
-        bot.send_message(user_id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}")
+        bot.send_message(user_id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}", disable_notification = True)
         bot.delete_message(message.chat.id, message.message_id)
 
 #Обработка сообщений с фото
@@ -420,7 +420,6 @@ def handle_photo(message):
 #        # Распознаем текст на картинке
 #        extracted_text = recognize_text(image_stream)
 #        message_text.append(f"Текст с картинки: '{extracted_text}'")
-
         handle_text_messages(message, message_text)
 
 #Обработка всех текстовых сообщений
@@ -486,7 +485,7 @@ def handle_text_messages(message, message_text=None):
             ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил рекламу, этому сообщению не место в этом чате!"
             bot.delete_message(chat_id, message_id)
             record_ban_event(chat_title, user_id, user_name, message_text, phrase, "BAN")
-            sent_message = bot.send_message(chat_id, ban_message)
+            sent_message = bot.send_message(chat_id, ban_message, disable_notification = True)
             notification_message = f"Сообщение от пользователя {user_name} (ID: {user_id}) удалено из чата '{chat_title}' за отправку рекламы\nСловосочетание:\n'{phrase}'\nСообщение пользователя:\n'{message_text.replace('\n', ' ')}'"
             log_and_admin_message(notification_message, chat_id)
             threading.Thread(target=delete_message_after_delay,
@@ -502,7 +501,7 @@ def handle_text_messages(message, message_text=None):
                 warning_message = f"Пользователь {user_name} (ID: {user_id}) ваше сообщение содержало запрещенное в этом чате слово {phrase}, попробуйте написать иначе."
                 bot.delete_message(chat_id, message_id)
                 record_ban_event(chat_title, user_id, user_name, message_text, phrase, "WARNING")
-                sent_message = bot.send_message(chat_id, warning_message)
+                sent_message = bot.send_message(chat_id, warning_message, disable_notification = True)
                 notification_message = f"Сообщение от пользователя  {user_name} (ID: {user_id}) удалено из чата '{chat_title}' за отправку сообщения с матом:\nСлово:\n{phrase}\nСообщение пользователя:\n'{message_text.replace('\n', ' ')}'"
                 log_and_admin_message(notification_message, chat_id)
                 threading.Thread(target=delete_message_after_delay,
@@ -558,7 +557,7 @@ while True:
             logging.info(f'Администраторы {admins_list_details}')
         bot.polling(timeout=320, none_stop=True)
         #Задержка перед повторным опросом
-        time.sleep(5)  
+        time.sleep(5)
 
 #Обработка ошибок
     except telebot.apihelper.ApiTelegramException as e:
