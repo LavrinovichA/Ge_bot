@@ -437,9 +437,12 @@ def handle_text_messages(message, message_text=None):
         if message_text is None:
             return
 
+    #Приводим текст в единый формат
+    text = preprocess_text(message_text)
+
     #Тестим новый способ проверки
-    logging.info(f"({user_id}; {user_name}), {message_text.replace('\n', ' ')}")
-    suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(preprocess_text(message_text), banned_phrases_new)
+    logging.info(f"({user_id}; {user_name}; {chat_title}), {message_text.replace('\n', ' ')}")
+    suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(text, banned_phrases_new)
     if suspicious:
         logging.info(f"!!! НЕ Ок. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
         logging.info(f"Совпавшие слова: {', '.join(found_words)}")
@@ -468,9 +471,6 @@ def handle_text_messages(message, message_text=None):
         except telebot.apihelper.ApiException as e:
             log_error(f"Ошибка при попытке заблокировать пользователя {user_id} в чате '{chat_title}': {e}")
         return
-
-    #Приводим текст в единый формат
-    text = preprocess_text(message_text)
 
     #Проверка на наличие рекламных сообщений
     for phrase in banned_phrases:
