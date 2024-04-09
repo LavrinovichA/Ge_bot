@@ -20,6 +20,10 @@ message_occurrences_cache = {}
 #Если используем мут в секундах
 MUTE_DURATION = 1209600
 
+#telegram constants
+ANONYMOUS_ADMIN_ID = '1087968824'
+SERVICE_CHAT_ID = '777000'
+
 #Логирование
 logging.basicConfig(filename='Multibot.json', encoding='utf-8', level=logging.INFO,
                     format='%(levelname)s - %(asctime)s - %(name)s - %(message)s')
@@ -187,13 +191,13 @@ def log_and_admin_message(notification_message, chat_id):
                 bot.send_message(admin_id, notification_message)
                 logging.info(f'Отправлено {admin_id}')
             except telebot.apihelper.ApiException as e:
-                log_error(f"Не удалось отправить {admin_id} {e}")
+                logging.error(f"Не удалось отправить {admin_id} {e}")
     else:
         try:
             bot.send_message(admin_id, notification_message)
             logging.info(f'Отправлено {admin_id}')
         except telebot.apihelper.ApiException as e:
-            log_error(f"Не удалось отправить {admin_id} {e}")
+            logging.error(f"Не удалось отправить {admin_id} {e}")
 
         for admin_id in admin_ids[chat_id]:
             if str(admin_id) == str(BOT_ID):
@@ -202,7 +206,7 @@ def log_and_admin_message(notification_message, chat_id):
                 bot.send_message(admin_id, notification_message)
                 logging.info(f'Отправлено {admin_id}')
             except telebot.apihelper.ApiException as e:
-                log_error(f"Не удалось отправить {admin_id} {e}")
+                logging.error(f"Не удалось отправить {admin_id} {e}")
 
 #Логирование ошибок
 def log_error(e):
@@ -426,9 +430,9 @@ def handle_text_messages(message, message_text=None):
     message_id = message.message_id
     words = ()
 
-    # Проверка, является ли отправитель администратором
-    # Не выполняем никаких действий, если отправитель администратор
-    if str(user_id) in admin_ids[chat_id] or str(user_id) == OWNER_ID:
+    #Проверка, является ли отправитель администратором, владельцем или сообщение от имени группы
+    #Не выполняем никаких действий
+    if str(user_id) in admin_ids[chat_id] or str(user_id) in {OWNER_ID, ANONYMOUS_ADMIN_ID, SERVICE_CHAT_ID}:
         return
 
     #Если нет текста не выполняем дальше
