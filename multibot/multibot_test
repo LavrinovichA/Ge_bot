@@ -245,6 +245,7 @@ warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
 
 #Создаем список для записи в файл
 admin_ids = get_chat_admins(CHAT_IDS)
+admin_values = [item for sublist in admin_ids.values() for item in sublist]
 
 
 #Обработчик команды /start
@@ -257,37 +258,39 @@ def handle_commands(message):
     logging.info(f'{user_name} в чате {chat_id} написал /start')
 
 #Проверка, что команда отправлена в личном сообщении и отправитель является администратором
-    if str(user_id) in admin_ids[chat_id]:
-        if str(message_text == "/start"):
-            #Создаем клавиатуру
-            keyboard = types.ReplyKeyboardMarkup(row_width=2)
-            button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика", "Статус"]
-            for text in button_texts:
-                button = types.KeyboardButton(text=text)
-                keyboard.add(button)
-            #Отправляем сообщение с клавиатурой в личное сообщение администратору
-            try:
-                bot.send_message(user_id, "Выберите действие:", reply_markup=keyboard, disable_notification = True)
-            except ApiTelegramException as e:
-                if e.error_code == 403:
-                    bot.send_message(chat_id, "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.", disable_notification = True)
-                else:
-                    bot.send_message(chat_id, f"Произошла ошибка: {e}", disable_notification = True)
+    if str(user_id) in admin_values or str(user_id) == OWNER_ID:
+        #Создаем клавиатуру
+        keyboard = types.ReplyKeyboardMarkup(row_width=2)
+        button_texts = ["Добавить данные в BAN", "Добавить данные в WARNING", "Статистика", "Статус"]
+        for text in button_texts:
+            button = types.KeyboardButton(text=text)
+            keyboard.add(button)
+        #Отправляем сообщение с клавиатурой в личное сообщение администратору
+        try:
+            bot.send_message(user_id, "Выберите действие:", reply_markup=keyboard, disable_notification = True)
+        except ApiTelegramException as e:
+            if e.error_code == 403:
+                bot.send_message(chat_id, "Для работы с ботом, пожалуйста, разрешите получение сообщений от ботов в настройках конфиденциальности Telegram.", disable_notification = True)
+            else:
+                bot.send_message(chat_id, f"Произошла ошибка: {e}", disable_notification = True)
     else:
-        bot.delete_message(chat_id, message.message_id)
-
-    if str(message_text) == "/start":
         try:
             bot.delete_message(chat_id, message.message_id)
         except Exception as e:
             log_error(f'Ошибка в обработке /start {e}')
+
+#    if str(message_text) == "/start":
+#        try:
+#            bot.delete_message(chat_id, message.message_id)
+#        except Exception as e:
+#            log_error(f'Ошибка в обработке /start {e}')
 
 #Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
 def add_to_ban_phrases(message):
     user_id = message.from_user.id
 
-    if str(user_id) in admin_ids[chat_id]:
+    if str(user_id) in admin_values or str(user_id) == OWNER_ID:
         bot.send_message(user_id, "Введите текст для добавления в BAN:", disable_notification = True)
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_ban_phrase, user_id)
@@ -317,7 +320,7 @@ def process_ban_phrase(message, user_id):
 def add_to_warning_phrases(message):
     user_id = message.from_user.id
 
-    if str(user_id) in admin_ids[chat_id]:
+    if str(user_id) in admin_values or str(user_id) == OWNER_ID:
         bot.send_message(user_id, "Введите текст для добавления в WARNING:", disable_notification = True)
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_warning_phrase, user_id)
@@ -342,7 +345,7 @@ def process_warning_phrase(message, user_id):
 @bot.message_handler(func=lambda message: message.text.strip() == "Статистика")
 def handle_statistics(message):
     user_id = message.from_user.id
-    if str(user_id) in admin_ids[chat_id]:
+    if str(user_id) in admin_values or str(user_id) == OWNER_ID:
         bot.send_message(user_id,"Введите интервал дат для вывода статистики в формате 'гггг-мм-дд гггг-мм-дд', например, '2024-02-01 2024-02-07':", disable_notification = True)
         bot.delete_message(message.chat.id, message.message_id)
         bot.register_next_step_handler(message, process_dates)
@@ -400,7 +403,7 @@ def count_events(file_path, file_bot_path, start_date, end_date):
 def status_command(message):
     user_id = message.from_user.id
 
-    if str(user_id) in admin_ids[chat_id]:
+    if str(user_id) in admin_values or str(user_id) == OWNER_ID:
         #Отправляем сообщение со статусом и временем запуска бота
         bot.send_message(user_id, f"Статус бота: онлайн\nВремя запуска бота: {bot_start_time}", disable_notification = True)
         bot.delete_message(message.chat.id, message.message_id)
