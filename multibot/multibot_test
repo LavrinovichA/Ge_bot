@@ -276,6 +276,9 @@ def handle_commands(message):
     else:
         try:
             bot.delete_message(chat_id, message.message_id)
+            sent_message = bot.send_message(chat_id, 'У вас нет прав на такое действие')
+            threading.Thread(target=delete_message_after_delay,
+                             args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
         except Exception as e:
             log_error(f'Ошибка в обработке /start {e}')
 
