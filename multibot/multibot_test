@@ -445,7 +445,7 @@ def handle_text_messages(message, message_text=None):
     chat_id = message.chat.id
     chat_title = bot.get_chat(chat_id).title
     if chat_title is None:
-        chat_title = 'Мне лично'
+        chat_title = 'Лично'
     message_id = message.message_id
     words = ()
 
@@ -557,21 +557,25 @@ while True:
         bot_start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         admins_info = get_chat_admins(CHAT_IDS)
         for chat_id, admins_list in admins_info.items():
-            chat_title = bot.get_chat(chat_id).title
-            print(f"Бот запущен в {bot_start_time} в чате '{chat_title}'")
-            logging.info(f"Бот запущен в {bot_start_time} в чате ID {chat_id}, {chat_title}")
-            #Получение данных администраторов в чате
-            admins_list_details = []
-            for admin_id in admins_list:
-                try:
-                    admin_info = bot.get_chat_member(chat_id, user_id=int(admin_id))
-                    admin_name = admin_info.user.first_name
-                    admin_last_name = admin_info.user.last_name if admin_info.user.last_name else ''
-                    admins_list_details.append(admin_name + ' ' + admin_last_name)
-                except Exception as e:
-                    print(f"Ошибка при получении данных администратора {admin_id} в чате '{chat_title}': {e}")
-            print(f'Администраторы {admins_list_details}\n ')
-            logging.info(f'Администраторы {admins_list_details}')
+            try:
+                chat_title = bot.get_chat(chat_id).title
+                print(f"Бот запущен в {bot_start_time} в чате '{chat_title}'")
+                logging.info(f"Бот запущен в {bot_start_time} в чате ID {chat_id}, {chat_title}")
+                #Получение данных администраторов в чате
+                admins_list_details = []
+                for admin_id in admins_list:
+                    try:
+                        admin_info = bot.get_chat_member(chat_id, user_id=int(admin_id))
+                        admin_name = admin_info.user.first_name
+                        admin_last_name = admin_info.user.last_name if admin_info.user.last_name else ''
+                        admins_list_details.append(admin_name + ' ' + admin_last_name)
+                    except Exception as e:
+                        print(f"Ошибка при получении данных администратора {admin_id} в чате '{chat_title}': {e}")
+                print(f'Администраторы {admins_list_details}\n ')
+                logging.info(f'Администраторы {admins_list_details}')
+            except Exception as e:
+                log_error(f'Ошибка при обработке чата {chat_id}: {e}')
+
         bot.polling(timeout=320, none_stop=True)
         #Задержка перед повторным опросом
         time.sleep(5)
