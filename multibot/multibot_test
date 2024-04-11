@@ -583,3 +583,7 @@ while True:
     except Exception as e:
         log_error(f'Ошибка после запуска {e}')
         continue
+    except socket.gaierror as e:
+        log_error(f'Ошибка соединения: {e}')
+        time.sleep(10)  # Пауза перед повторной попыткой
+        continue
