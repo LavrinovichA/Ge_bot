@@ -181,6 +181,15 @@ def count_message_occurrences(text):
                 message_occurrences_cache[text] = count
                 return message_occurrences_cache
 
+#Логирование обращений к боту
+def log_and_owner_message(notification_message):
+    logging.info(notification_message.replace('\n', ' '))
+    try:
+        bot.send_message(OWNER_ID, notification_message)
+        logging.info(f'Отправлено {OWNER_ID}')
+    except Exception as e:
+        logging.error(f"Не удалось отправить {OWNER_ID} {e}")
+
 #Функция логирования и отправки сообщения админам
 def log_and_admin_message(notification_message, chat_id):
     logging.info(notification_message.replace('\n', ' '))
@@ -191,13 +200,13 @@ def log_and_admin_message(notification_message, chat_id):
             try:
                 bot.send_message(admin_id, notification_message)
                 logging.info(f'Отправлено {admin_id}')
-            except telebot.apihelper.ApiException as e:
+            except Exception as e:
                 logging.error(f"Не удалось отправить {admin_id} {e}")
     else:
         try:
             bot.send_message(admin_id, notification_message)
             logging.info(f'Отправлено {admin_id}')
-        except telebot.apihelper.ApiException as e:
+        except Exception as e:
             logging.error(f"Не удалось отправить {admin_id} {e}")
 
         for admin_id in admin_ids[chat_id]:
@@ -206,7 +215,7 @@ def log_and_admin_message(notification_message, chat_id):
             try:
                 bot.send_message(admin_id, notification_message)
                 logging.info(f'Отправлено {admin_id}')
-            except telebot.apihelper.ApiException as e:
+            except Exception as e:
                 logging.error(f"Не удалось отправить {admin_id} {e}")
 
 #Логирование ошибок
@@ -435,12 +444,14 @@ def handle_text_messages(message, message_text=None):
     user_name = message.from_user.first_name
     chat_id = message.chat.id
     chat_title = bot.get_chat(chat_id).title
+    if chat_title is None:
+        chat_title = 'Мне лично'
     message_id = message.message_id
     words = ()
 
     #Проверка, является ли отправитель администратором, владельцем или сообщение от имени группы
     #Не выполняем никаких действий
-    if str(user_id) in admin_ids[chat_id] or str(user_id) in {OWNER_ID, ANONYMOUS_ADMIN_ID, SERVICE_CHAT_ID}:
+    if str(user_id) in admin_values or str(user_id) in {OWNER_ID, ANONYMOUS_ADMIN_ID, SERVICE_CHAT_ID}:
         return
 
     #Если нет текста не выполняем дальше
@@ -466,7 +477,7 @@ def handle_text_messages(message, message_text=None):
     if message_text.startswith('/') and " " not in message_text:
         bot.delete_message(chat_id, message_id)
         notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал отправить команду:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
-        log_and_admin_message(notification_message, chat_id)
+        log_and_owner_message(notification_message)
         return
 
     #Проверка на повторяющиеся сообщения
@@ -479,7 +490,7 @@ def handle_text_messages(message, message_text=None):
         try:
             bot.restrict_chat_member(chat_id, user_id, until_date=time.time() + MUTE_DURATION, can_send_messages=False)
             logging.info(f"Пользователь {user_name} ID: {user_id} в чате '{chat_title}', заблокирован на 14 дней")
-        except telebot.apihelper.ApiException as e:
+        except Exception as e:
             log_error(f"Ошибка при попытке заблокировать пользователя {user_id} в чате '{chat_title}': {e}")
         return
 
