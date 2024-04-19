@@ -204,10 +204,10 @@ def log_and_admin_message(notification_message, chat_id):
                 logging.error(f"Не удалось отправить {admin_id} {e}")
     else:
         try:
-            bot.send_message(admin_id, notification_message)
-            logging.info(f'Отправлено {admin_id}')
+            bot.send_message(OWNER_ID, notification_message)
+            logging.info(f'Отправлено OWNER {admin_id}')
         except Exception as e:
-            logging.error(f"Не удалось отправить {admin_id} {e}")
+            logging.error(f"Не удалось отправить OWNER {admin_id} {e}")
 
         for admin_id in admin_ids[chat_id]:
             if str(admin_id) == str(BOT_ID):
