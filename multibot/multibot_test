@@ -460,6 +460,18 @@ def handle_text_messages(message, message_text=None):
         if message_text is None:
             return
 
+    #Проверяем наличие каналов в сообщении
+    if re.search(r'(?<!\w)@\w+', message_text):
+        bot.delete_message(chat_id, message_id)
+        notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал рекламировать канал:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
+        log_and_admin_message(notification_message, chat_id)
+        record_ban_event(chat_title, user_id, user_name, message_text, "КАНАЛ", "BAN")
+        ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил приглашение в сомнительный канал, этому сообщению не место в этом чате!"
+        sent_message = bot.send_message(chat_id, ban_message, disable_notification=True)
+        threading.Thread(target=delete_message_after_delay,
+                         args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
+        return
+
     #Приводим текст в единый формат
     text = preprocess_text(message_text)
 
