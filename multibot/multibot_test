@@ -186,9 +186,9 @@ def log_and_owner_message(notification_message):
     logging.info(notification_message.replace('\n', ' '))
     try:
         bot.send_message(OWNER_ID, notification_message)
-        logging.info(f'Отправлено {OWNER_ID}')
+        logging.info('Отправлено OWNER')
     except Exception as e:
-        logging.error(f"Не удалось отправить {OWNER_ID} {e}")
+        logging.error(f"Не удалось отправить OWNER {e}")
 
 #Функция логирования и отправки сообщения админам
 def log_and_admin_message(notification_message, chat_id):
@@ -203,11 +203,7 @@ def log_and_admin_message(notification_message, chat_id):
             except Exception as e:
                 logging.error(f"Не удалось отправить {admin_id} {e}")
     else:
-        try:
-            bot.send_message(OWNER_ID, notification_message)
-            logging.info(f'Отправлено OWNER {admin_id}')
-        except Exception as e:
-            logging.error(f"Не удалось отправить OWNER {admin_id} {e}")
+        log_and_owner_message(notification_message)
 
         for admin_id in admin_ids[chat_id]:
             if str(admin_id) == str(BOT_ID):
@@ -291,12 +287,6 @@ def handle_commands(message):
         except Exception as e:
             log_error(f'Ошибка в обработке /start {e}')
 
-#    if str(message_text) == "/start":
-#        try:
-#            bot.delete_message(chat_id, message.message_id)
-#        except Exception as e:
-#            log_error(f'Ошибка в обработке /start {e}')
-
 #Обработчик для сообщений после выбора кнопки "Добавить данные в BAN"
 @bot.message_handler(func=lambda message: message.text.strip() == "Добавить данные в BAN")
 def add_to_ban_phrases(message):
@@ -376,11 +366,12 @@ def process_dates(message):
 
     file_path = BANSTAT_FILE
     file_bot_path = BOT_STAT_FILE
-    count_ban, count_warning, count_bot, count_mut = count_events(file_path, file_bot_path, start_date, end_date)
+    count_ban, count_warning, count_bot, count_mut, count_chn = count_events(file_path, file_bot_path, start_date, end_date)
     bot.send_message(chat_id, f"За период с {start_date} по {end_date}:\n"
-                                      f"Рекламных {count_ban} сообщений,\n"
-                                      f"Вынесено {count_warning} предупреждений,\n"
-                                      f"Заблокировано {count_mut},\n"
+                                      f"Рекламных {count_ban} сообщений;\n"
+                                      f"Вынесено {count_warning} предупреждений;\n"
+                                      f"Попыток рекламмы каналов {count_chn};\n"
+                                      f"Заблокировано {count_mut};\n"
                                       f"Удалено {count_bot} ботов", disable_notification = True)
 
 #Функция для подсчета событий в указанном диапазоне дат
@@ -389,6 +380,7 @@ def count_events(file_path, file_bot_path, start_date, end_date):
     count_warning = 0
     count_bot = 0
     count_mut = 0
+    count_chn = 0
     start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
     end_datetime = datetime.strptime(end_date, '%Y-%m-%d') if end_date else start_datetime
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -402,6 +394,8 @@ def count_events(file_path, file_bot_path, start_date, end_date):
                     count_warning += 1
                 elif event_data['event_type'] == 'MUT':
                     count_mut += 1
+                elif event_data['event_type'] == 'CHN':
+                    count_chn +=1
     with open(file_bot_path, 'r', encoding='utf-8') as file:
         for line in file:
             event_data = json.loads(line)
@@ -460,18 +454,6 @@ def handle_text_messages(message, message_text=None):
         if message_text is None:
             return
 
-    #Проверяем наличие каналов в сообщении
-    if re.search(r'(?<!\w)@\w+', message_text):
-        bot.delete_message(chat_id, message_id)
-        notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал рекламировать канал:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
-        log_and_admin_message(notification_message, chat_id)
-        record_ban_event(chat_title, user_id, user_name, message_text, "КАНАЛ", "BAN")
-        ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил приглашение в сомнительный канал, этому сообщению не место в этом чате!"
-        sent_message = bot.send_message(chat_id, ban_message, disable_notification=True)
-        threading.Thread(target=delete_message_after_delay,
-                         args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
-        return
-
     #Приводим текст в единый формат
     text = preprocess_text(message_text)
 
@@ -504,6 +486,18 @@ def handle_text_messages(message, message_text=None):
             logging.info(f"Пользователь {user_name} ID: {user_id} в чате '{chat_title}', заблокирован на 14 дней")
         except Exception as e:
             log_error(f"Ошибка при попытке заблокировать пользователя {user_id} в чате '{chat_title}': {e}")
+        return
+
+    #Проверяем наличие каналов в сообщении
+    if re.search(r'(?<!\w)@\w+', message_text):
+        bot.delete_message(chat_id, message_id)
+        notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал рекламировать канал:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
+        log_and_admin_message(notification_message, chat_id)
+        record_ban_event(chat_title, user_id, user_name, message_text, "КАНАЛ", "CHN")
+        ban_message = f"Я подозреваю, что {user_name} (ID: {user_id}) отправил приглашение в сомнительный канал, этому сообщению не место в этом чате!"
+        sent_message = bot.send_message(chat_id, ban_message, disable_notification=True)
+        threading.Thread(target=delete_message_after_delay,
+                         args=(sent_message.chat.id, sent_message.message_id, DELETE_MESSAGE_DELAY)).start()
         return
 
     #Проверка на наличие рекламных сообщений
@@ -574,6 +568,7 @@ while True:
             logging.info(f"Бот запущен в {bot_start_time} в чате ID {chat_id}, {chat_title}")
             #Получение данных администраторов в чате
             admins_list_details = []
+            admin_id = None
             for admin_id in admins_list:
                 try:
                     admin_info = bot.get_chat_member(chat_id, user_id=int(admin_id))
@@ -590,10 +585,10 @@ while True:
 
 #Обработка ошибок
     except telebot.apihelper.ApiTelegramException as e:
-        log_error(f'Ошибка после запуска {e}')
+        log_error(f'Ошибка после запуска 1 {e}')
         continue
     except Exception as e:
-        log_error(f'Ошибка после запуска {e}')
+        log_error(f'Ошибка после запуска 2 {e}')
         continue
     except socket.gaierror as e:
         log_error(f'Ошибка соединения: {e}')
