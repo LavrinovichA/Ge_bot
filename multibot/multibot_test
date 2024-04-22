@@ -402,7 +402,7 @@ def count_events(file_path, file_bot_path, start_date, end_date):
             timestamp = datetime.strptime(event_data['timestamp'][:10], '%Y-%m-%d')
             if start_datetime <= timestamp <= end_datetime:
                 count_bot += 1
-    return count_ban, count_warning, count_bot, count_mut
+    return count_ban, count_warning, count_bot, count_mut, count_chn
 
 #Обработчик для сообщений после выбора кнопки "Статус"
 @bot.message_handler(func=lambda message: message.text.strip() == "Статус")
