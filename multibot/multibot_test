@@ -469,9 +469,12 @@ def handle_text_messages(message, message_text=None):
 
     #Попытка отправить команду
     if message_text.startswith('/') and " " not in message_text:
-        bot.delete_message(chat_id, message_id)
-        notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал отправить команду:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
-        log_and_owner_message(notification_message)
+        try:
+            bot.delete_message(chat_id, message_id)
+            notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}/{chat_id}'\nпопробовал отправить команду:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
+            log_and_owner_message(notification_message)
+        except Exception as e:
+            log_error(f"Ошибка при попытке удалить команду от {user_id} в чате '{chat_title}/{chat_id}': {e}")
         return
 
     #Проверка на повторяющиеся сообщения
