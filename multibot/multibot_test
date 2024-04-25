@@ -203,8 +203,6 @@ def log_and_admin_message(notification_message, chat_id):
             except Exception as e:
                 logging.error(f"Не удалось отправить {admin_id} {e}")
     else:
-        log_and_owner_message(notification_message)
-
         for admin_id in admin_ids[chat_id]:
             if str(admin_id) == str(BOT_ID):
                 continue
@@ -471,10 +469,11 @@ def handle_text_messages(message, message_text=None):
     if message_text.startswith('/') and " " not in message_text:
         try:
             bot.delete_message(chat_id, message_id)
-            notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}/{chat_id}'\nпопробовал отправить команду:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
-            log_and_owner_message(notification_message)
         except Exception as e:
             log_error(f"Ошибка при попытке удалить команду от {user_id} в чате '{chat_title}/{chat_id}': {e}")
+
+        notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}/{chat_id}'\nпопробовал отправить команду:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
+        log_and_owner_message(notification_message)
         return
 
     #Проверка на повторяющиеся сообщения
@@ -492,7 +491,7 @@ def handle_text_messages(message, message_text=None):
         return
 
     #Проверяем наличие каналов в сообщении
-    if re.search(r'(?<!\w)@\w+', message_text):
+    if re.search(r'(?<!\w)@(?!geoscan)\w+', message_text):
         bot.delete_message(chat_id, message_id)
         notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал рекламировать канал:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
         log_and_admin_message(notification_message, chat_id)
