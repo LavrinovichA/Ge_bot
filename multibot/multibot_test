@@ -30,7 +30,7 @@ logging.basicConfig(filename='Multibot.json', encoding='utf-8', level=logging.IN
 
 #Создаем словарь для замены латинских букв на кириллические
 replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
-                    'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё': 'е', '0':'о', '6':'б'}
+                    'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё': 'е', '0':'о', '6':'б', '4':'ч'}
 translation_table = str.maketrans(replacement_dict)
 
 #Функция для чтения ТОКЕНА и ID чатов из файла
@@ -203,6 +203,12 @@ def log_and_admin_message(notification_message, chat_id):
             except Exception as e:
                 logging.error(f"Не удалось отправить {admin_id} {e}")
     else:
+        try:
+            bot.send_message(OWNER_ID, notification_message)
+            logging.info('Отправлено OWNER')
+        except Exception as e:
+            logging.error(f"Не удалось отправить OWNER {e}")
+
         for admin_id in admin_ids[chat_id]:
             if str(admin_id) == str(BOT_ID):
                 continue
