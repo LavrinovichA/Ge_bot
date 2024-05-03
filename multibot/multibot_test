@@ -33,6 +33,9 @@ replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 
                     'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё': 'е', '0':'о', '6':'б', '4':'ч'}
 translation_table = str.maketrans(replacement_dict)
 
+# Создаем список исключений
+exclusions = ['geoscan', 'findprjbot']
+
 #Функция для чтения ТОКЕНА и ID чатов из файла
 def read_token_and_chat_id():
     try:
@@ -200,8 +203,8 @@ def log_and_admin_message(notification_message, chat_id):
             try:
                 bot.send_message(admin_id, notification_message)
                 logging.info(f'Отправлено {admin_id}')
-            except Exception as e:
-                logging.error(f"Не удалось отправить {admin_id} {e}")
+            except:
+                pass
     else:
         try:
             bot.send_message(OWNER_ID, notification_message)
@@ -235,19 +238,19 @@ def recognize_text(image_stream):
     return extracted_text
 
 #Тестим новый способ проверки
-def check_suspicious_text(text, banned_phrases_new):
-    found_words = [word.lower() for word in banned_phrases_new if word.lower() in text.lower()]
-    found_count = len(found_words)
+#def check_suspicious_text(text, banned_phrases_new):
+#    found_words = [word.lower() for word in banned_phrases_new if word.lower() in text.lower()]
+#    found_count = len(found_words)
 
     #Общее количество слов в тексте
-    total_words = len(text.split())
-    suspicious_percentage = round((found_count / total_words) * 100, 2) if total_words > 0 else 0
-    suspicious = suspicious_percentage > 30
-    return suspicious, found_count, found_words, suspicious_percentage
+#    total_words = len(text.split())
+#    suspicious_percentage = round((found_count / total_words) * 100, 2) if total_words > 0 else 0
+#    suspicious = suspicious_percentage > 30
+#    return suspicious, found_count, found_words, suspicious_percentage
 
 #Чтение списка запрещенных фраз
 banned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
-banned_phrases_new = read_data_from_file(BANNED_PHRASES_FILE_NEW)
+#banned_phrases_new = read_data_from_file(BANNED_PHRASES_FILE_NEW)
 
 #Чтение списка фраз предупреждений
 warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
@@ -458,18 +461,21 @@ def handle_text_messages(message, message_text=None):
         if message_text is None:
             return
 
+    #Логируем сообщение для возможности разбора
+    logging.info(f"({user_id}; {user_name}; {chat_title}), {message_text.replace('\n', ' ')}")
+
     #Приводим текст в единый формат
     text = preprocess_text(message_text)
 
     #Тестим новый способ проверки
-    logging.info(f"({user_id}; {user_name}; {chat_title}), {message_text.replace('\n', ' ')}")
-    suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(text, banned_phrases_new)
-    if suspicious:
-        logging.info(f"!!! НЕ Ок. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
-        logging.info(f"Совпавшие слова: {', '.join(found_words)}")
-    else:
-        logging.info(f"ОК. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
-        logging.info(f"Совпавшие слова: {', '.join(found_words)}")
+    #logging.info(f"({user_id}; {user_name}; {chat_title}), {message_text.replace('\n', ' ')}")
+    #suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(text, banned_phrases_new)
+    #if suspicious:
+    #    logging.info(f"!!! НЕ Ок. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
+    #    logging.info(f"Совпавшие слова: {', '.join(found_words)}")
+    #else:
+    #    logging.info(f"ОК. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
+    #    logging.info(f"Совпавшие слова: {', '.join(found_words)}")
 
     #Попытка отправить команду
     if message_text.startswith('/') and " " not in message_text:
@@ -497,7 +503,7 @@ def handle_text_messages(message, message_text=None):
         return
 
     #Проверяем наличие каналов в сообщении
-    if re.search(r'(?<!\w)@(?!geoscan)\w+', message_text):
+    if re.search(r'(?<!\w)@(?!' + '|'.join(exclusions) + r')\w+', message_text):
         bot.delete_message(chat_id, message_id)
         notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал рекламировать канал:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
         log_and_admin_message(notification_message, chat_id)
