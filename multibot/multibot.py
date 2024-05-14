@@ -3,7 +3,7 @@ from imports import *
 #Пути к файлам JSON
 TOKEN_FILE = "token.json"
 BANNED_PHRASES_FILE = "banned_phrases.json"
-BANNED_PHRASES_FILE_NEW = "banned_phrases_new.json"
+#BANNED_PHRASES_FILE_NEW = "banned_phrases_new.json"
 WARNING_PHRASES_FILE = "warning_phrases.json"
 BANSTAT_FILE = "ban_stat.json"
 BOT_STAT_FILE = "bot_stat.json"
@@ -237,8 +237,20 @@ def recognize_text(image_stream):
 
     return extracted_text
 
+#Тестим новый способ проверки
+#def check_suspicious_text(text, banned_phrases_new):
+#    found_words = [word.lower() for word in banned_phrases_new if word.lower() in text.lower()]
+#    found_count = len(found_words)
+
+    #Общее количество слов в тексте
+#    total_words = len(text.split())
+#    suspicious_percentage = round((found_count / total_words) * 100, 2) if total_words > 0 else 0
+#    suspicious = suspicious_percentage > 30
+#    return suspicious, found_count, found_words, suspicious_percentage
+
 #Чтение списка запрещенных фраз
 banned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
+#banned_phrases_new = read_data_from_file(BANNED_PHRASES_FILE_NEW)
 
 #Чтение списка фраз предупреждений
 warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
@@ -362,7 +374,9 @@ def process_dates(message):
     file_path = BANSTAT_FILE
     file_bot_path = BOT_STAT_FILE
     count_ban, count_warning, count_bot, count_mut, count_chn = count_events(file_path, file_bot_path, start_date, end_date)
+    count_sum = count_chn + count_bot + count_mut + count_ban + count_warning
     bot.send_message(chat_id, f"За период с {start_date} по {end_date}:\n"
+                                      f"Всего подозрительных {count_sum}, из них:\n"
                                       f"Рекламных {count_ban} сообщений;\n"
                                       f"Вынесено {count_warning} предупреждений;\n"
                                       f"Попыток рекламмы каналов {count_chn};\n"
@@ -454,6 +468,16 @@ def handle_text_messages(message, message_text=None):
 
     #Приводим текст в единый формат
     text = preprocess_text(message_text)
+
+    #Тестим новый способ проверки
+    #logging.info(f"({user_id}; {user_name}; {chat_title}), {message_text.replace('\n', ' ')}")
+    #suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(text, banned_phrases_new)
+    #if suspicious:
+    #    logging.info(f"!!! НЕ Ок. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
+    #    logging.info(f"Совпавшие слова: {', '.join(found_words)}")
+    #else:
+    #    logging.info(f"ОК. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
+    #    logging.info(f"Совпавшие слова: {', '.join(found_words)}")
 
     #Попытка отправить команду
     if message_text.startswith('/') and " " not in message_text:
