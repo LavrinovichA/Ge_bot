@@ -30,7 +30,8 @@ logging.basicConfig(filename='Multibot.json', encoding='utf-8', level=logging.IN
 
 #Создаем словарь для замены латинских букв на кириллические
 replacement_dict = {'e': 'е', 'y': 'у', 'u': 'и', 'o': 'о', 'p': 'р', 'a': 'а', 'k': 'к', 'x': 'х', 'c': 'с',
-                    'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё': 'е', '0':'о', '6':'б', '4':'ч'}
+                    'n': 'п', 'm': 'т', 't': 'т', 'b': 'б', 'ё': 'е', '0':'о', 'ᴏ': 'о', '6':'б', '4':'ч', 'Ꭲ': 'т', 'ᴛ': 'т', 'Ꭼ': 'е', 'ᴇ': 'е',
+                    'Ꮧ': 'л', 'Ꮯ': 'с', 'ᴄ': 'с', 'ɜ': 'з', 'ɯ': 'ш', 'ʙ': 'в', 'ᴧ': 'л', 'ᴨ': 'п', 'ᴩ': 'р', 'ᴋ': 'к', 'ᴀ': 'а'}
 translation_table = str.maketrans(replacement_dict)
 
 # Создаем список исключений
@@ -233,20 +234,8 @@ def recognize_text(image_stream):
     #Открываем изображение с помощью PIL
     image = Image.open(image_stream)
     #Используем pytesseract для распознавания текста
-    extracted_text = pytesseract.image_to_string(image)
-
+    extracted_text = pytesseract.image_to_string(image, lang='rus')
     return extracted_text
-
-#Тестим новый способ проверки
-#def check_suspicious_text(text, banned_phrases_new):
-#    found_words = [word.lower() for word in banned_phrases_new if word.lower() in text.lower()]
-#    found_count = len(found_words)
-
-    #Общее количество слов в тексте
-#    total_words = len(text.split())
-#    suspicious_percentage = round((found_count / total_words) * 100, 2) if total_words > 0 else 0
-#    suspicious = suspicious_percentage > 30
-#    return suspicious, found_count, found_words, suspicious_percentage
 
 #Чтение списка запрещенных фраз
 banned_phrases = read_data_from_file(BANNED_PHRASES_FILE)
@@ -258,7 +247,6 @@ warning_phrases = read_data_from_file(WARNING_PHRASES_FILE)
 #Создаем список для записи в файл
 admin_ids = get_chat_admins(CHAT_IDS)
 admin_values = [item for sublist in admin_ids.values() for item in sublist]
-
 
 #Обработчик команды /start
 @bot.message_handler(commands=["start", "help", "settings", "any_other_command"])
@@ -426,19 +414,26 @@ def status_command(message):
 #Обработка сообщений с фото
 @bot.message_handler(content_types=['photo', 'audio', 'documents', 'video', 'voice', 'sticker'])
 def handle_photo(message):
+    user_id = message.from_user.id
+    #Не выполняем никаких действий
+    if str(user_id) in admin_values or str(user_id) in {OWNER_ID, ANONYMOUS_ADMIN_ID, SERVICE_CHAT_ID}:
+        return
+
     #Обработка подписи к фотографии, если есть
+    message_text = str()
     if message.caption:
         message_text = message.caption
-#    if message.photo:
-#        file_id = message.photo[-1].file_id
-#        file_info = bot.get_file(file_id)
-#        image_stream = BytesIO()
-#        file_info.download(out=image_stream)
-#        image_stream.seek(0)
-#        # Распознаем текст на картинке
-#        extracted_text = recognize_text(image_stream)
-#        message_text.append(f"Текст с картинки: '{extracted_text}'")
-        handle_text_messages(message, message_text)
+    if message.photo:
+        file_id = message.photo[-1].file_id
+        file_info = bot.get_file(file_id)
+        file_path = file_info.file_path
+        file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
+        with requests.get(file_url) as response:
+            image_stream = BytesIO(response.content)
+            # Распознаем текст на картинке
+            extracted_text = recognize_text(image_stream)
+            message_text += f" Текст с картинки: '{extracted_text}'"
+            handle_text_messages(message, message_text)
 
 #Обработка всех текстовых сообщений
 @bot.message_handler(func=lambda message: True)
@@ -468,16 +463,6 @@ def handle_text_messages(message, message_text=None):
 
     #Приводим текст в единый формат
     text = preprocess_text(message_text)
-
-    #Тестим новый способ проверки
-    #logging.info(f"({user_id}; {user_name}; {chat_title}), {message_text.replace('\n', ' ')}")
-    #suspicious, found_count, found_words, suspicious_percentage = check_suspicious_text(text, banned_phrases_new)
-    #if suspicious:
-    #    logging.info(f"!!! НЕ Ок. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
-    #    logging.info(f"Совпавшие слова: {', '.join(found_words)}")
-    #else:
-    #    logging.info(f"ОК. Количество совпавших слов: {found_count}, {suspicious_percentage}%")
-    #    logging.info(f"Совпавшие слова: {', '.join(found_words)}")
 
     #Попытка отправить команду
     if message_text.startswith('/') and " " not in message_text:
