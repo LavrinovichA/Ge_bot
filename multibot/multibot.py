@@ -490,7 +490,7 @@ def handle_text_messages(message, message_text=None):
         return
 
     #Проверяем наличие каналов в сообщении
-    if re.search(r'(?<!\w)@(?!' + '|'.join(exclusions) + r')\w+', message_text):
+    if re.search(r'(?<!\w)@(?!' + '|'.join(exclusions) + r')\w+', message_text, re.I):
         bot.delete_message(chat_id, message_id)
         notification_message = f"Пользователь {user_name} (ID: {user_id}) В чате '{chat_title}'\nпопробовал рекламировать канал:\n'{message_text.replace('\n', ' ')}'\nсообщение удалено"
         log_and_admin_message(notification_message, chat_id)
