@@ -432,6 +432,8 @@ def handle_photo(message):
             image_stream = BytesIO(response.content)
             # Распознаем текст на картинке
             extracted_text = recognize_text(image_stream)
+            # Заменяем все знаки "@" на пробелы
+            extracted_text = extracted_text.replace('@', ' ')
             message_text += f" Текст с картинки: '{extracted_text}'"
             handle_text_messages(message, message_text)
 
